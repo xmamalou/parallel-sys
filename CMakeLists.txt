@@ -5,4 +5,12 @@ project(parallel_systems_vol1
         DESCRIPTION "First set of exercises from the 'Parallel Systems' course of the 'Computer Engineering' masters programme of the Informatics and Telecommunications Department of the University of Athens"
         LANGUAGES C)
 
-add_executable(parallel_systems_vol1 main.c)
+set(APP_NAME exe)
+set(SRCFILES src/main.c src/pi_calc.c)
+
+if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
+        set(APP_NAME exe-dbg)
+        add_executable(${APP_NAME} ${SRCFILES})
+else()
+        add_executable(${APP_NAME} ${SRCFILES})
+endif()
