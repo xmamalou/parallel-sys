@@ -6,7 +6,10 @@ project(parallel_systems_vol1
         LANGUAGES C)
 
 set(APP_NAME exe)
-set(SRCFILES src/main.c src/pi_calc.c)
+set(SRCFILES 
+        src/main.c 
+        src/pi_calc.c
+        src/utility.c)
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
         set(APP_NAME exe-dbg)
@@ -14,3 +17,5 @@ if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 else()
         add_executable(${APP_NAME} ${SRCFILES})
 endif()
+
+target_compile_options(${APP_NAME} PRIVATE -D_POSIX_C_SOURCE=200809L)

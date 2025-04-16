@@ -10,6 +10,7 @@
 
 // --- TYPES --- //
 
+/// @brief Exercise number
 typedef enum Exercise {
     HELP       = 0,
     EXERCISE_1 = 1,
@@ -24,16 +25,39 @@ typedef enum Exercise {
     LIST       = 10,
 } Exercise;
 
+/// @brief Options for the project
 typedef struct Options {
     Exercise which;
-    bool     do_serial;
+    char**   flags;
+    uint32_t flag_count;
 } Options;
+
+typedef void (*ExerciseFunc)(
+        char** flags, uint32_t flag_count);
+
+// --- CONSTANTS --- //
+
+const ExerciseFunc exercise_funcptrs[] = {
+    pi_calc
+};
 
 // --- FUNCTIONS --- //
 
+/// @brief Reads arguments from the command line to parse them into actions
+/// @param argc command line arguments
+/// @param argv command line argument count
+/// @param exercise_options structure to be modified depending on command line arguments
 void read_arguments(
         int argc, char* argv[],
-        Options *exercise_options);
+        Options* exercise_options);
+
+/// @brief Parses a string of `-f` flags to pass them to an exercise. Flags must be sequential and not be broken
+/// by another non-flag argument.  
+/// @param argv_slice 
+/// @param argv_slice_length 
+/// @return The amount of arguments that refer to flags
+uint32_t count_flags(
+        char** argv_slice, uint32_t argv_slice_length);
 
 // --- FUNC DEFINITIONS --- //
 
@@ -41,8 +65,9 @@ int main(
         int argc, char* argv[]) 
 {
     Options exercise_options = {
-        .which = HELP,
-        .do_serial = false
+        .which      = HELP,
+        .flags      = NULL,
+        .flag_count = 0
     };
 
     if(argc > 1) 
@@ -67,18 +92,15 @@ int main(
                 "\t(1) Calculate π using the Monte Carlo method\n"
                 "\tFlags (prefixed with -f):\n"
                 "\t\t* s, serial: Run the serial version of the algorithm\n"
-                "\t\t* p, parallel: Run the parallel version of the algorithm (default)\n\x1b[0m");
+                "\t\t* p, parallel: Run the parallel version of the algorithm (default)\n"
+                "\t\t* omp: Run the openmp version of the parallel algorithm (if not specified, runs the pthread version)\n"
+                "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+                "\t\t* n=<number>, throws=<number>: Number of throws for the Monte Carlo experiment\n\x1b[0m");
         return 0;
     }
 
-    switch(exercise_options.which) 
-    {
-    case EXERCISE_1:
-        pi_calc(exercise_options.do_serial);
-        break;
-    default:
-        printf("Hello World\n");
-    }
+    exercise_funcptrs[exercise_options.which](
+            exercise_options.flags, exercise_options.flag_count);
 
     return 0;
 }
@@ -87,7 +109,7 @@ int main(
 
 void read_arguments(
         int argc, char* argv[],
-        Options *exercise_options) 
+        Options* exercise_options) 
 {
     exercise_options->which = HELP;
 
@@ -103,26 +125,16 @@ void read_arguments(
         if (strcmp(argv[i], "--exercise") == 0 || strcmp(argv[i], "-e") == 0) 
         {
             if (i + 1 < argc 
-                    && (atoi(argv[i+1]) < 10 && atoi(argv[i+1]) > 0)) {
-                    exercise_options->which = (Exercise)atoi(argv[i+1]); 
-                if (i + 2 < argc)
-                {
-                    if(strcmp(argv[i+2], "-fserial") == 0 || strcmp(argv[i+2], "-fs") == 0)
-                    {
-                        exercise_options->do_serial = true;
-                    }
+                    && (atoi(argv[i+1]) < 10 && atoi(argv[i+1]) > 0)) 
+            {
+                exercise_options->which = (Exercise)atoi(argv[i+1]); 
+                exercise_options->flag_count = count_flags(
+                        &(argv[i+2]), argc - i - 2);
+                exercise_options->flags = &(argv[i+2]);
 
-                    if(strcmp(argv[i+2], "-fparallel") == 0 || strcmp(argv[i+2], "-fp") == 0)
-                    {
-                        exercise_options->do_serial = false;
-                    }
-
-                    i += 2;
-                } else {
-                    i++;
-                }
+                i += exercise_options->flag_count + 1; // besides the flag counts, there's also the exercise number
                 continue;
-            }  else {
+            } else {
                 fprintf(stderr, "\x1b[31mERROR! Expected exercise number but was given no or invalid parameter!!\x1b[0m\n");
                 return; // Invalid parameter, we cannot continue
             }
@@ -142,3 +154,21 @@ void read_arguments(
     }
 }
 
+uint32_t count_flags(
+        char** argv_slice, uint32_t argv_slice_length)
+{
+    uint32_t count = 0;
+    for (uint32_t i = 0; i < argv_slice_length; i++)
+    {
+        if (strstr(argv_slice[i], "-f") != NULL)
+        {
+            count++;
+        } else {
+             // if the array of flags is broken by something that does not start with `-f`, we consider that there are no
+             // more flags for the exercise
+            break;
+        }
+    }
+
+    return count;
+}
