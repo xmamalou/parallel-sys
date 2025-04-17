@@ -38,15 +38,15 @@ const uint64_t nsecs_in_sec = 1000000000;
 
 // --- FUNCTION DEFINITIONS --- //
 
-BenchmarkHandle start_benchmark() 
+BENCHMARK_T start_benchmark() 
 {
     Benchmark* benchmark_p = (Benchmark*)calloc(1, sizeof(Benchmark));
     clock_gettime(CLOCK_REALTIME, &benchmark_p->start);
 
-    return (BenchmarkHandle)benchmark_p;
+    return (BENCHMARK_T)benchmark_p;
 }
 
-uint64_t stop_benchmark(BenchmarkHandle handle)
+uint64_t stop_benchmark(BENCHMARK_T handle)
 {
     Benchmark* benchmark_p = (Benchmark*)handle;
     clock_gettime(CLOCK_REALTIME, &benchmark_p->end);

@@ -7,3 +7,6 @@ Building is easy and automated; just use one of the script files provided in the
 
 >[!NOTE]
 > The build scripts by default assume you have Ninja installed. Use `--no-weeb` to override this assumption
+
+## PROJECT MAP
+- EXERCISE 1: ./src/pi_calc.c

@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "utility.h"
 
@@ -34,6 +36,10 @@ typedef struct PiCalcOptions {
     bool     do_omp;
 } PiCalcOptions;
 
+typedef struct ThreadParams {
+    uint64_t throw_count;
+} ThreadParams;
+
 // --- CONSTANTS --- //
 
 const char* exercise_type[] = {
@@ -45,6 +51,11 @@ const char* exercise_type[] = {
 const uint64_t nsec_to_sec_factor  = 1000000000;
 const uint64_t nsec_to_msec_factor = 1000000;
 
+// --- GLOBALS --- //
+
+/// @brief total amount of successful throws (i.e. inside the circle)
+uint64_t        succ_throws_g = 0;
+pthread_mutex_t throws_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
@@ -55,10 +66,15 @@ void read_flags_ex1(
 inline void pi_calc_serial(uint64_t throw_count);
 inline void pi_calc_parallel(
         uint32_t job_count,
-        uint32_t throw_count);
+        uint64_t throw_count);
 inline void pi_calc_openmp( 
         uint32_t job_count,
-        uint32_t throw_count);
+        uint64_t throw_count);
+
+/// @brief Function that calculates amount of successful throws
+/// @param args Pointer to thread parametrization structure
+/// @return NULL
+void* succ_throws_callback(void* args);
 
 // --- FUNCTION DEFINITIONS --- //
 
@@ -166,7 +182,7 @@ inline void pi_calc_serial(uint64_t throw_count)
     // throws inside the circle
     uint64_t succ_throws = 0;
 
-    BenchmarkHandle bench_h = start_benchmark();
+    BENCHMARK_T bench_h = start_benchmark();
     for (uint64_t i = 0; i < throw_count; i++)
     {
         double x = (double)rand()/(double)RAND_MAX, 
@@ -186,14 +202,40 @@ inline void pi_calc_serial(uint64_t throw_count)
 
 inline void pi_calc_parallel(
     uint32_t job_count,
-    uint32_t throw_count) 
+    uint64_t throw_count) 
 {
-
+    uint64_t throws_per_job = throw_count/job_count;
+    for (uint32_t i = 0; i < job_count; i++)
+    {
+        
+    }
 }
 
 inline void pi_calc_openmp( 
     uint32_t job_count,
-    uint32_t throw_count)
+    uint64_t throw_count)
 {
+}
 
+void* succ_throws_callback(void* args)
+{
+    ThreadParams* params = (ThreadParams*)args;
+
+    uint64_t succ_throws = 0;
+    for (uint64_t i = 0; i < params->throw_count; i++)
+    {
+        double x = (double)rand()/(double)RAND_MAX, 
+                y = (double)rand()/(double)RAND_MAX;
+
+        if (x*x + y*y <= 1.0) 
+        {
+            succ_throws++;
+        }
+    }
+
+    pthread_mutex_lock(&throws_mtx);
+    succ_throws_g += succ_throws;
+    pthread_mutex_unlock(&throws_mtx);
+
+    return NULL;
 }
