@@ -10,12 +10,13 @@ set(SRCFILES
         src/main.c 
         src/pi_calc.c
         src/utility.c)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
-        set(APP_NAME exe-dbg)
-        add_executable(${APP_NAME} ${SRCFILES})
-else()
-        add_executable(${APP_NAME} ${SRCFILES})
+        set(APP_NAME exe-dbg)      
 endif()
 
+add_executable(${APP_NAME} ${SRCFILES})
 target_compile_options(${APP_NAME} PRIVATE -D_POSIX_C_SOURCE=200809L)
+find_package(Threads REQUIRED)
+target_link_libraries(${APP_NAME} PRIVATE Threads::Threads)

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <linux/limits.h>
 
 #include "utility.h"
 
@@ -34,6 +35,7 @@ typedef struct PiCalcOptions {
     uint32_t job_count;
     bool     do_serial;
     bool     do_omp;
+    char     data_path[PATH_MAX];
 } PiCalcOptions;
 
 typedef struct ThreadParams {
@@ -59,17 +61,13 @@ pthread_mutex_t throws_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
-void read_flags_ex1(
+static void read_flags_ex1(
         char** flags, uint32_t flag_count,
         PiCalcOptions* options_p);
 
-inline void pi_calc_serial(uint64_t throw_count);
-inline void pi_calc_parallel(
-        uint32_t job_count,
-        uint64_t throw_count);
-inline void pi_calc_openmp( 
-        uint32_t job_count,
-        uint64_t throw_count);
+inline static void pi_calc_serial(const PiCalcOptions* options_p);
+inline static void pi_calc_parallel(const PiCalcOptions* options_p);
+inline static void pi_calc_openmp(const PiCalcOptions* options_p);
 
 /// @brief Function that calculates amount of successful throws
 /// @param args Pointer to thread parametrization structure
@@ -86,6 +84,7 @@ void pi_calc(
         .throw_count = 10, 
         .do_serial   = false,
         .do_omp      = false,
+        .data_path   = "",
     };
     read_flags_ex1(
             flags, flag_count,
@@ -96,6 +95,7 @@ void pi_calc(
             "* You selected %s execution\n"
             "* You want %u jobs\n"
             "* You want %lu throws\n"
+            "* Data will be saved to %s\n"
             "-------------------------------------\n\n\x1b[0m", 
             exercise_type[
                     options.do_serial 
@@ -104,25 +104,22 @@ void pi_calc(
                         ? 1 
                         : 2)],
             options.job_count, 
-            options.throw_count);
+            options.throw_count,
+            options.data_path);
 
     if (options.do_serial)
     {
-        pi_calc_serial(options.throw_count);
+        pi_calc_serial(&options);
     } else if (options.do_omp) {
-        pi_calc_openmp(
-                options.job_count,
-                options.throw_count);
+        pi_calc_openmp(&options);
     } else {
-        pi_calc_parallel(
-                options.job_count,
-                options.throw_count);
+        pi_calc_parallel(&options);
     }
 
     return;
 }
 
-void read_flags_ex1(
+static void read_flags_ex1(
     char** flags, uint32_t flag_count,
     PiCalcOptions* options_p)
 {
@@ -172,21 +169,51 @@ void read_flags_ex1(
             char* equal_char_p     = strchr(flags[i], '=');
             options_p->throw_count = atoll(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
         }
+
+        if (strstr(flags[i], "-ffile=") != NULL || strstr(flags[i], "-ff=") != NULL)
+        {
+            char* equal_char_p     = strchr(flags[i], '=');
+            if (equal_char_p[1] != '~' || equal_char_p[1] != '/')
+            {
+                getcwd(options_p->data_path, PATH_MAX);
+                strcat(options_p->data_path, "/");
+            }
+            strncat(
+                    options_p->data_path,
+                    &equal_char_p[1],
+                    strlen(&equal_char_p[1]));
+        }
     }
 }
 
-inline void pi_calc_serial(uint64_t throw_count) 
+inline static void pi_calc_serial(const PiCalcOptions* options_p) 
 {
     printf("I estimate that π is approximately equal to... ");
 
+    const LOG_T log = open_log(
+            options_p->data_path,
+            true); 
+    
+    char text[PATH_MAX] = "";
+    write_log(
+            log, 
+            "[EXERCISE 1]\n");
+    sprintf(
+            text,
+            "type = serial\nthrows = %d\n", options_p->throw_count);
+    write_log(
+            log,
+            text);
+
     // throws inside the circle
     uint64_t succ_throws = 0;
+    uint32_t seed        = 10000;
 
     BENCHMARK_T bench_h = start_benchmark();
-    for (uint64_t i = 0; i < throw_count; i++)
+    for (uint64_t i = 0; i < options_p->throw_count; i++)
     {
-        double x = (double)rand()/(double)RAND_MAX, 
-                y = (double)rand()/(double)RAND_MAX;
+        double x = (double)rand_r(&seed)/(double)RAND_MAX, 
+                y = (double)rand_r(&seed)/(double)RAND_MAX;
 
         if (x*x + y*y <= 1.0) 
         {
@@ -196,25 +223,82 @@ inline void pi_calc_serial(uint64_t throw_count)
     uint64_t time = stop_benchmark(bench_h);
 
     printf("%f!\nThis took %f msecs!", 
-            4*succ_throws/(double)throw_count, 
+            4*succ_throws/(double)options_p->throw_count, 
             (double)time/(double)nsec_to_msec_factor);
+    
+    sprintf(
+            text,
+            "π = %f\ntime = %f\n", 4*succ_throws/(double)options_p->throw_count, (double)time/(double)nsec_to_msec_factor);
+    write_log(
+            log,
+            text);
+    close_log(log);
 }
 
-inline void pi_calc_parallel(
-    uint32_t job_count,
-    uint64_t throw_count) 
+inline static void pi_calc_parallel(const PiCalcOptions* options_p) 
 {
-    uint64_t throws_per_job = throw_count/job_count;
-    for (uint32_t i = 0; i < job_count; i++)
+    printf("I estimate that π is approximately equal to... ");
+
+    const LOG_T log = open_log(
+            options_p->data_path,
+            true); 
+    
+    char text[PATH_MAX] = "";
+    write_log(
+            log, 
+            "[EXERCISE 1]\n");
+    sprintf(
+            text,
+            "type = pthreads\njobs = %d\nthrows = %d\n", 
+            options_p->job_count, options_p->throw_count);
+    write_log(
+            log,
+            text);
+    
+    uint64_t throws_per_job = options_p->throw_count/options_p->job_count;
+    ThreadParams parameters = {
+        .throw_count = throws_per_job
+    };
+    pthread_t* threads = calloc(
+            options_p->job_count,
+            sizeof(pthread_t));
+    pthread_mutex_init(
+            &throws_mtx,
+            NULL);
+    for (uint32_t i = 0; i < options_p->job_count; i++)
     {
-        
+        uint32_t err = pthread_create(
+                &threads[i],
+                NULL,
+                &succ_throws_callback,
+                &parameters);
     }
+    // now we wait for all the threads to finish
+    BENCHMARK_T bench_h = start_benchmark();
+    for (uint32_t i = 0; i < options_p->job_count; i++)
+    {
+        pthread_join(
+                threads[i],
+                NULL);
+    }
+    uint64_t time = stop_benchmark(bench_h);
+
+    printf("%f!\nThis took %f msecs!", 
+            4*succ_throws_g/(double)options_p->throw_count, 
+            (double)time/(double)nsec_to_msec_factor);
+
+    sprintf(
+            text,
+            "π = %f\ntime = %f\n", 4*succ_throws_g/(double)options_p->throw_count, (double)time/(double)nsec_to_msec_factor);
+    write_log(
+            log,
+            text);
+    close_log(log);
 }
 
-inline void pi_calc_openmp( 
-    uint32_t job_count,
-    uint64_t throw_count)
+inline static void pi_calc_openmp(const PiCalcOptions* options_p)
 {
+    return;
 }
 
 void* succ_throws_callback(void* args)
@@ -222,10 +306,11 @@ void* succ_throws_callback(void* args)
     ThreadParams* params = (ThreadParams*)args;
 
     uint64_t succ_throws = 0;
+    uint32_t seed        = 10000;
     for (uint64_t i = 0; i < params->throw_count; i++)
     {
-        double x = (double)rand()/(double)RAND_MAX, 
-                y = (double)rand()/(double)RAND_MAX;
+        double x = (double)rand_r(&seed)/(double)RAND_MAX, 
+                y = (double)rand_r(&seed)/(double)RAND_MAX;
 
         if (x*x + y*y <= 1.0) 
         {
