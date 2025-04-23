@@ -21,6 +21,7 @@
 #define __UTILITY_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define HANDLE_TYPE(name) name##Handle
 #define HANDLE_BUILDER(name) struct HANDLE_TYPE(name)* HANDLE_TYPE(name)
@@ -39,5 +40,27 @@ inline BENCHMARK_T start_benchmark();
 /// @param handle The benchmark to stop
 /// @return the time that passed in nsec since `start_benchmark` was called
 inline uint64_t stop_benchmark(BENCHMARK_T handle);
+
+// --- LOGGING --- //
+
+typedef HANDLE_BUILDER(Log);
+#define LOG_T HANDLE_TYPE(Log)
+
+/// @brief Open a log
+/// @return Returns a handle to the created log
+inline LOG_T open_log(
+        const char* const path,
+        const bool        do_append);
+
+/// @brief Write to a log
+/// @param log_h The log handle to write to
+/// @param text The text to log
+void write_log(
+        const LOG_T handle, 
+        const char* const text);
+
+/// @brief Close a log
+/// @param log_h The log handle to close
+inline void close_log(const LOG_T handle);
 
 #endif /* __UTILITY_H__ */

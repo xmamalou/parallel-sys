@@ -19,6 +19,7 @@
 
 #include "utility.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #define itimerspec linux_itimerspec
@@ -32,6 +33,10 @@ typedef struct Benchmark {
     struct timespec end;
 } Benchmark;
 
+typedef struct Log {
+    FILE* file_p;
+} Log;
+
 // --- CONSTANTS --- //
 
 const uint64_t nsecs_in_sec = 1000000000;
@@ -40,7 +45,7 @@ const uint64_t nsecs_in_sec = 1000000000;
 
 BENCHMARK_T start_benchmark() 
 {
-    Benchmark* benchmark_p = (Benchmark*)calloc(1, sizeof(Benchmark));
+    const Benchmark* benchmark_p = (Benchmark*)calloc(1, sizeof(Benchmark));
     clock_gettime(CLOCK_REALTIME, &benchmark_p->start);
 
     return (BENCHMARK_T)benchmark_p;
@@ -48,13 +53,45 @@ BENCHMARK_T start_benchmark()
 
 uint64_t stop_benchmark(BENCHMARK_T handle)
 {
-    Benchmark* benchmark_p = (Benchmark*)handle;
+    const Benchmark* benchmark_p = (Benchmark*)handle;
     clock_gettime(CLOCK_REALTIME, &benchmark_p->end);
 
-    uint64_t time =
+    const uint64_t time =
             benchmark_p->end.tv_sec*nsecs_in_sec + benchmark_p->end.tv_nsec
             - benchmark_p->start.tv_sec*nsecs_in_sec - benchmark_p->start.tv_nsec;
     free((void*)benchmark_p);
 
     return time;
+}
+
+LOG_T open_log(
+        const char* const path,
+        const bool        do_append)
+{
+    const FILE* file_p = fopen(
+            path, 
+            do_append ? "a" : "w");
+    Log* log_p = (Log*)calloc(1, sizeof(Log));
+    log_p->file_p = file_p;
+
+    return (LOG_T)log_p;
+}
+
+void write_log(
+        LOG_T handle,
+        const char* const text)
+{
+    const Log* log_p = (Log*)handle;
+    fprintf(
+            log_p->file_p,
+            text);
+}
+
+void close_log(LOG_T handle)
+{
+    const Log* log_p = (Log*)handle;
+    fclose(log_p->file_p);
+    free((void*)log_p);
+
+    return;
 }
