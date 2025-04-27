@@ -1,4 +1,5 @@
 .vscode/
 build/
 exercise/
-./data/
+data/
+!scripts/data/
