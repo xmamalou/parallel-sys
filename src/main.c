@@ -114,7 +114,9 @@ int main(
                 "\t\t* p, parallel: Run the parallel version of the algorithm (default)\n"
                 "\t\t* omp: Run the openmp version of the parallel algorithm (if not specified, runs the pthread version)\n"
                 "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
-                "\t\t* n=<number>, throws=<number>: Number of throws for the Monte Carlo experiment\n\x1b[0m");
+                "\t\t* n=<number>, throws=<number>: Number of throws for the Monte Carlo experiment\n"
+                "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time and value of π\x1b[0m");
         return 0;
     }
 
