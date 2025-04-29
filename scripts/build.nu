@@ -15,11 +15,12 @@ def main [
     }
 
     let build_type = if $debug {"Debug"} else {"Release"}
+    let optimization = if $debug {"-DCMAKE_C_FLAGS_RELEASE=-O3"} else {""}
     let compiler_string = if $clang {"-DCMAKE_C_COMPILER=/bin/clang"} else {"-DCMAKE_C_COMPILER=/bin/gcc"}
     let build_gen = if not $no_weeb and ("/usr/bin/ninja" | path exists) {"Ninja"} else {"Unix Makefiles"}
 
     print $"(ansi red)Using (ansi purple)($build_gen)(ansi red) as build method\n(ansi green)"
-    cmake $"-DCMAKE_BUILD_TYPE=($build_type)" $"($compiler_string)" -G $"($build_gen)" ..
+    cmake $"-DCMAKE_BUILD_TYPE=($build_type)" $"($compiler_string)" $"($optimization)" -G $"($build_gen)" ..
     if not $no_weeb and ("/usr/bin/ninja" | path exists) {
         ninja -j $jobs    
     } else { .. 
