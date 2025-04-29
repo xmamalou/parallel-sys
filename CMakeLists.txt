@@ -9,6 +9,8 @@ set(APP_NAME exe)
 set(SRCFILES 
         src/main.c 
         src/pi_calc.c
+        src/shared_var.c
+        src/false_sharing.c
         src/utility.c)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 

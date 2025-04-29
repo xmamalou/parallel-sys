@@ -26,4 +26,10 @@
 void pi_calc(
         char** flags, uint32_t flag_count);
 
+void shared_var(
+        char** flags, uint32_t flag_count);
+
+void false_sharing(
+        char** flags, uint32_t flag_count);
+
 #endif /* __EXERCISES_H__ */ 

@@ -57,7 +57,9 @@ typedef void (*ExerciseFunc)(
 // --- CONSTANTS --- //
 
 const ExerciseFunc exercise_funcptrs[] = {
-    pi_calc
+    pi_calc,
+    shared_var,
+    false_sharing,
 };
 
 // --- FUNCTIONS --- //
@@ -116,11 +118,27 @@ int main(
                 "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
                 "\t\t* n=<number>, throws=<number>: Number of throws for the Monte Carlo experiment\n"
                 "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
-                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time and value of π\x1b[0m");
+                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time and value of π\n"
+                "\t(2) Increment a shared variable\n"
+                "\tFlags (prefixed with -f):\n"
+                "\t\t* l, locks: Run the version using locks (default)\n"
+                "\t\t* a, atomic: Run the version using atomics\n"
+                "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+                "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+                "\t(3) False sharing\n"
+                "\tFlags (prefixed with -f):\n"
+                "\t\t* l, locks: Run the version using locks (default)\n"
+                "\t\t* a, atomic: Run the version using atomics\n"
+                "\t\t* ns, nosync: Run with no synchronization\n"
+                "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+                "\t\t* i=<number>, incr=<number>: How many loops each thread should run\n"
+                "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n\x1b[0m");
         return 0;
     }
 
-    exercise_funcptrs[exercise_options.which](
+    exercise_funcptrs[exercise_options.which - 1](
             exercise_options.flags, exercise_options.flag_count);
 
     return 0;
