@@ -11,6 +11,7 @@ set(SRCFILES
         src/pi_calc.c
         src/shared_var.c
         src/false_sharing.c
+        src/barriers.c
         src/utility.c)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
