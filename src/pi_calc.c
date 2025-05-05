@@ -63,7 +63,7 @@ static pthread_mutex_t throws_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
-static void read_flags_ex1(
+static void read_flags(
         char** flags, uint32_t flag_count,
         Options* options_p);
 
@@ -89,7 +89,7 @@ void pi_calc(
         .data_path   = "",
         .tries       = 1,
     };
-    read_flags_ex1(
+    read_flags(
             flags, flag_count,
             &options);
 
@@ -129,7 +129,7 @@ void pi_calc(
     return;
 }
 
-static void read_flags_ex1(
+static void read_flags(
     char** flags, uint32_t flag_count,
     Options* options_p)
 {
@@ -139,8 +139,9 @@ static void read_flags_ex1(
         {
             if (options_p->do_omp)
             {
-                printf("\x1b[31mHey! You requested serial execution, even though"
-                    " you already want parallel! IGNORING!\n\x1b[0m");
+                fprintf(stderr,
+                        "\x1b[31mHey! You requested serial execution, even though"
+                        " you already want parallel! IGNORING!\n\x1b[0m");
                 continue;
             }
 
@@ -152,7 +153,8 @@ static void read_flags_ex1(
         {
             if(options_p->do_serial)
             {
-                printf("\x1b[31mHey! You requested OpenMP to be used, even though"
+                fprintf(stderr, 
+                        "\x1b[31mHey! You requested OpenMP to be used, even though"
                         " you want serial execution! IGNORING!\n\x1b[0m");
                 continue;
             }
@@ -165,7 +167,8 @@ static void read_flags_ex1(
         {
             if(options_p->do_serial)
             {
-                printf("\x1b[31mHey! You requested a custom amount of jobs, even though"
+                fprintf(stderr, 
+                        "\x1b[31mHey! You requested a custom amount of jobs, even though"
                         " you want serial execution! IGNORING!\n\x1b[0m");
                 continue;
             }
@@ -314,9 +317,12 @@ inline static void pi_calc_parallel(const Options* options_p)
             pthread_join(
                     threads[i],
                     NULL);
+            threads[i] == NULL;
         }
         avg_time += stop_benchmark(bench_h);
     }
+
+    free(threads);
     
     avg_time      /= options_p->tries;
     succ_throws_g /= options_p->tries;

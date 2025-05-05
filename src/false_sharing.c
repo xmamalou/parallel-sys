@@ -63,9 +63,9 @@ static void read_flags(
     char** flags, uint32_t flag_count,
     Options* options_p);
 
-static void shared_var_impl(const Options* options_p);
+static void false_sharing_impl(const Options* options_p);
 
-// args -> Pointer to the threadnumber, cast to uint32_t
+// args -> the threadnumber, cast to uint32_t
 static void* increment_nosync_callback(void* args);
 static void* increment_locks_callback(void* args);
 static void* increment_atomic_callback(void* args);
@@ -109,7 +109,7 @@ void false_sharing(
                 options.tries);
     }
 
-    shared_var_impl(&options);
+    false_sharing_impl(&options);
 
     return;
 }
@@ -197,7 +197,7 @@ static void read_flags(
     }
 }
 
-static void shared_var_impl(const Options* options_p)
+static void false_sharing_impl(const Options* options_p)
 {
     LOG_T log = NULL;
     if ( strcmp(options_p->data_path, "") != 0 )
@@ -250,8 +250,16 @@ static void shared_var_impl(const Options* options_p)
             pthread_join(
                     threads[i],
                     NULL);
+            threads[i] == NULL;
         }
         avg_time += stop_benchmark(bench_h);
+    }
+
+    free(threads);
+
+    if (!options_p->do_with_atomic)
+    {
+        pthread_mutex_destroy(&shared_var_mtx);
     }
     
     avg_time      /= options_p->tries;
@@ -308,16 +316,16 @@ static void shared_var_impl(const Options* options_p)
 
 static void* increment_nosync_callback(void* args)
 {
-    uint32_t* threadnum = (uint32_t*)args;
-    incremented_gs[*threadnum]++;
+    uint32_t threadnum = (uint32_t)args;
+    incremented_gs[threadnum]++;
 }
 
 static void* increment_locks_callback(void* args)
 {
-    uint32_t* threadnum = (uint32_t*)args;
+    uint32_t threadnum = (uint32_t)args;
 
     pthread_mutex_lock(&shared_var_mtx);
-    incremented_gs[*threadnum]++;
+    incremented_gs[threadnum]++;
     pthread_mutex_unlock(&shared_var_mtx);
 
     return NULL;
@@ -325,11 +333,11 @@ static void* increment_locks_callback(void* args)
 
 static void* increment_atomic_callback(void* args)
 {
-    uint32_t* threadnum = (uint32_t*)args;
+    uint32_t threadnum = (uint32_t)args;
 
-    uint64_t intrm = atomic_load(&incremented_atom_gs[*threadnum]);
+    uint64_t intrm = atomic_load(&incremented_atom_gs[threadnum]);
     intrm++;
-    atomic_store(&incremented_atom_gs[*threadnum], intrm);
+    atomic_store(&incremented_atom_gs[threadnum], intrm);
 
     return NULL;
 }

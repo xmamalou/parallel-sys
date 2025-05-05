@@ -202,8 +202,16 @@ static void shared_var_impl(const Options* options_p)
             pthread_join(
                     threads[i],
                     NULL);
+            threads[i] == NULL;
         }
         avg_time += stop_benchmark(bench_h);
+    }
+
+    free(threads);
+
+    if (!options_p->do_with_atomic)
+    {
+        pthread_mutex_destroy(&shared_var_mtx);
     }
     
     avg_time      /= options_p->tries;
