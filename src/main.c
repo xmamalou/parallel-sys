@@ -60,6 +60,7 @@ const ExerciseFunc exercise_funcptrs[] = {
     pi_calc,
     shared_var,
     false_sharing,
+    barriers,
 };
 
 // --- FUNCTIONS --- //
@@ -133,6 +134,15 @@ int main(
                 "\t\t* ns, nosync: Run with no synchronization\n"
                 "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
                 "\t\t* i=<number>, incr=<number>: How many loops each thread should run\n"
+                "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+                "\t(3) Barriers"
+                "\tFlags (prefixed with -f):\n"
+                "\t\t* p, pthreads: Run with pthreads barriers implementation\n"
+                "\t\t* c, custom: Run with custom barriers implementation\n"
+                "\t\t* b, busywait: Run with busywaiting\n"
+                "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+                "\t\t* n=<number>: How many loops each thread should run\n"
                 "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
                 "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n\x1b[0m");
         return 0;
