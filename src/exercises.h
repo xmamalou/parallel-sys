@@ -32,4 +32,7 @@ void shared_var(
 void false_sharing(
         char** flags, uint32_t flag_count);
 
+void barriers(
+        char** flags, uint32_t flag_count);
+
 #endif /* __EXERCISES_H__ */ 

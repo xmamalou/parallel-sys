@@ -19,9 +19,12 @@
 
 #include "utility.h"
 
+#define __USE_XOPEN2K
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <pthread.h>
 #define itimerspec linux_itimerspec
 #include <linux/time.h>
 #undef itimerspec
@@ -36,6 +39,13 @@ typedef struct Benchmark {
 typedef struct Log {
     FILE* file_p;
 } Log;
+
+typedef struct Barrier {
+    pthread_mutex_t mutex;
+    pthread_cond_t  condition;
+    uint32_t        claimers;
+    uint32_t        curr_claimers;
+} Barrier;
 
 // --- CONSTANTS --- //
 
@@ -94,4 +104,48 @@ void close_log(LOG_T handle)
     free((void*)log_p);
 
     return;
+}
+
+BARRIER_T create_barrier(const uint32_t holder_count)
+{
+    Barrier* barrier_p = (Barrier*)calloc(1, sizeof(Barrier));
+    pthread_mutex_init(
+            &barrier_p->mutex,
+            NULL);
+    pthread_cond_init(
+            &barrier_p->condition,
+            NULL);
+
+    barrier_p->claimers = holder_count;
+    barrier_p->curr_claimers = 0;
+
+    return (BARRIER_T)barrier_p;
+}
+
+void waitfor_barrier(const BARRIER_T barrier_h)
+{
+    Barrier* barrier_p = (Barrier*)barrier_h;
+
+    pthread_mutex_lock(&barrier_p->mutex);
+    barrier_p->curr_claimers++;
+
+    if (barrier_p->curr_claimers == barrier_p->claimers)
+    {
+        barrier_p->curr_claimers = 0;
+        pthread_cond_broadcast(&barrier_p->condition);
+    } else {
+        pthread_cond_wait(
+                &barrier_p->condition,
+                &barrier_p->mutex);
+    }
+    pthread_mutex_unlock(&barrier_p->mutex);
+}
+
+void destroy_barrier(BARRIER_T barrier_h)
+{
+    Barrier* barrier_p = (Barrier*)barrier_h;
+    pthread_mutex_destroy(&barrier_p->mutex);
+    pthread_cond_destroy(&barrier_p->condition);
+
+    free((void*)barrier_h);
 }

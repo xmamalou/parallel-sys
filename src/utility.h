@@ -63,4 +63,22 @@ void write_log(
 /// @param log_h The log handle to close
 inline void close_log(const LOG_T handle);
 
+// --- BARRIERS --- //
+
+typedef HANDLE_BUILDER(Barrier);
+#define BARRIER_T HANDLE_TYPE(Barrier)
+
+/// @brief Create a barrier
+/// @param holder_count how many will have to wait before the barrier can allow them to proceed
+/// @return the handle to the barrier
+inline BARRIER_T create_barrier(const uint32_t holder_count);
+
+/// @brief Wait for a barrier
+/// @param barrier_h the handle of the barrier to wait for
+void waitfor_barrier(const BARRIER_T barrier_h);
+
+/// @brief Destroy a barrier
+/// @param barrier_h the handle of the barrier to destroy
+inline void destroy_barrier(BARRIER_T barrier_h);
+
 #endif /* __UTILITY_H__ */
