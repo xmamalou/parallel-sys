@@ -12,6 +12,8 @@ set(SRCFILES
         src/shared_var.c
         src/false_sharing.c
         src/barriers.c
+        src/better_mul.c
+        src/game_of_life.c
         src/utility.c)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 

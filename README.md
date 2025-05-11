@@ -12,3 +12,6 @@ Building is easy and automated; just use one of the script files provided in the
 - EXERCISE 1: ./src/pi_calc.c
 - EXERCISE 2: ./src/shared_var.c
 - EXERCISE 3: ./src/false_sharing.c
+- EXERCISE 4: ./src/barriers.c
+- EXERCISE 5: ./src/better_mul.c
+- EXERCISE 6: ./src/game_of_life.c
