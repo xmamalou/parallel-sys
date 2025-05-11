@@ -31,11 +31,16 @@
 
 // -- TYPES --- //
 
+typedef enum Which {
+    SERIAL   = 0,
+    PTHREADS = 1,
+    OPENMP   = 2,
+} Which;
+
 typedef struct Options {
     uint64_t throw_count;
     uint32_t job_count;
-    bool     do_serial;
-    bool     do_omp;
+    Which    which_method;
     char     data_path[PATH_MAX];
     uint32_t tries;
 } Options;
@@ -82,12 +87,11 @@ void pi_calc(
         char** flags, uint32_t flag_count) 
 {
     Options options = {
-        .job_count   = 1,
-        .throw_count = 10, 
-        .do_serial   = false,
-        .do_omp      = false,
-        .data_path   = "",
-        .tries       = 1,
+        .job_count    = 1,
+        .throw_count  = 10, 
+        .which_method = PTHREADS,
+        .data_path    = "",
+        .tries        = 1,
     };
     read_flags(
             flags, flag_count,
@@ -105,26 +109,20 @@ void pi_calc(
                 "* Data will be saved to %s\n"
                 "* The experiment will be run %d tries\n"
                 "-------------------------------------\n\n\x1b[0m", 
-                exercise_type[
-                        options.do_serial 
-                        ? 0 
-                        : (!options.do_omp 
-                            ? 1 
-                            : 2)],
+                exercise_type[options.which_method],
                 options.job_count, 
                 options.throw_count,
                 options.data_path,
                 options.tries);
     }
 
-    if (options.do_serial)
-    {
-        pi_calc_serial(&options);
-    } else if (options.do_omp) {
-        pi_calc_openmp(&options);
-    } else {
-        pi_calc_parallel(&options);
-    }
+    typedef void (*Implementations)(const Options*);
+    Implementations functions[] = {
+        &pi_calc_serial,
+        &pi_calc_parallel,
+        &pi_calc_openmp,
+    };
+    functions[options.which_method](&options);
 
     return;
 }
@@ -137,35 +135,54 @@ static void read_flags(
     {
         if (strcmp(flags[i], "-fs") == 0 || strcmp(flags[i], "-fserial") == 0)
         {
-            if (options_p->do_omp)
-            {
-                fprintf(stderr,
-                        "\x1b[31mHey! You requested serial execution, even though"
-                        " you already want parallel! IGNORING!\n\x1b[0m");
-                continue;
-            }
-
-            options_p->do_serial = true;
-            options_p->do_omp    = false;
+            options_p->which_method = SERIAL;
         }
 
         if (strcmp(flags[i], "-fomp") == 0)
         {
-            if(options_p->do_serial)
+            if (options_p->which_method == SERIAL)
             {
-                fprintf(stderr, 
-                        "\x1b[31mHey! You requested OpenMP to be used, even though"
-                        " you want serial execution! IGNORING!\n\x1b[0m");
+                fprintf(stderr,
+                        "\x1b[31mHey! You requested parallel execution, even though"
+                        " you already want serial! IGNORING!\n\x1b[0m");
                 continue;
             }
 
-            options_p->do_serial = false;
-            options_p->do_omp    = true;
+            if(options_p->which_method == PTHREADS)
+            {
+                fprintf(stderr, 
+                        "\x1b[31mHey! You requested OpenMP to be used, even though"
+                        " you want Pthreads! IGNORING!\n\x1b[0m");
+                continue;
+            }
+
+            options_p->which_method == OPENMP;
+        }
+
+        if (strcmp(flags[i], "-fpthreads") == 0 || strcmp(flags[i], "-fp") == 0)
+        {
+            if (options_p->which_method == SERIAL)
+            {
+                fprintf(stderr,
+                        "\x1b[31mHey! You requested parallel execution, even though"
+                        " you already want serial! IGNORING!\n\x1b[0m");
+                continue;
+            }
+
+            if(options_p->which_method == OPENMP)
+            {
+                fprintf(stderr, 
+                        "\x1b[31mHey! You requested Pthreads to be used, even though"
+                        " you want OpenMP! IGNORING!\n\x1b[0m");
+                continue;
+            }
+
+            options_p->which_method == PTHREADS;
         }
 
         if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
         {
-            if(options_p->do_serial)
+            if(options_p->which_method = SERIAL)
             {
                 fprintf(stderr, 
                         "\x1b[31mHey! You requested a custom amount of jobs, even though"

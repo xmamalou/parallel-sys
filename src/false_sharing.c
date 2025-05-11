@@ -32,9 +32,14 @@
 
 // --- TYPES --- //
 
+typedef enum Which {
+    NO_SYNC = 0,
+    MUTEX = 1,
+    ATOMIC = 2,
+} Which;
+
 typedef struct Options {
-    bool     do_with_nosync;
-    bool     do_with_atomic;
+    Which    which_method;
     uint32_t tries;
     uint32_t job_count;
     uint32_t incr_times;
@@ -44,6 +49,7 @@ typedef struct Options {
 // --- CONSTANTS --- //
 
 static const char* exercise_type[] = {
+    "no synchronization",
     "locks",
     "atomics",
 };
@@ -77,8 +83,7 @@ void false_sharing(
 {
     Options options = {
         .job_count      = 1,
-        .do_with_nosync = false,
-        .do_with_atomic = false,
+        .which_method   = NO_SYNC,
         .data_path      = "",
         .tries          = 1,
         .incr_times     = 0,
@@ -99,10 +104,7 @@ void false_sharing(
                 "* Data will be saved to %s\n"
                 "* The experiment will be run %d tries\n"
                 "------------------------------------\n\n\x1b[0m", 
-                exercise_type[
-                        !options.do_with_atomic 
-                        ? 0 
-                        : 1],
+                exercise_type[options.which_method],
                 options.job_count, 
                 options.incr_times,
                 options.data_path,
@@ -122,45 +124,38 @@ static void read_flags(
     {
         if (strcmp(flags[i], "-flock") == 0 || strcmp(flags[i], "-fl") == 0)
         {
-            if (options_p->do_with_atomic)
+            if (options_p->which_method == ATOMIC)
             {
                 printf("\x1b[31mHey! You requested execution using locks, even though"
                     " you already want it using atomics! IGNORING!\n\x1b[0m");
                 continue;
             }
 
-            if (options_p->do_with_nosync)
-            {
-                printf("\x1b[31mHey! You requested execution using synchronization, even though"
-                    " you already want none! IGNORING!\n\x1b[0m");
-                continue;
-            }
-
-            options_p->do_with_atomic = false;
+            options_p->which_method = MUTEX;
         }
 
         if (strcmp(flags[i], "-fatom") == 0 || strcmp(flags[i], "-fa") == 0)
         {
-            if (options_p->do_with_nosync)
+            if (options_p->which_method == MUTEX)
             {
-                printf("\x1b[31mHey! You requested execution using synchronization, even though"
-                    " you already want none! IGNORING!\n\x1b[0m");
+                printf("\x1b[31mHey! You requested execution using locks, even though"
+                    " you already want atomics! IGNORING!\n\x1b[0m");
                 continue;
             }
 
-            options_p->do_with_atomic = true;
+            options_p->which_method = ATOMIC;
         }
 
         if (strcmp(flags[i], "-fnosync") == 0 || strcmp(flags[i], "-fns") == 0)
         {
-            if (options_p->do_with_atomic)
+            if (options_p->which_method == MUTEX || options_p->which_method == ATOMIC)
             {
                 printf("\x1b[31mHey! You requested execution with no synchronization, even though"
                     " you already want some! IGNORING!\n\x1b[0m");
                 continue;
             }
 
-            options_p->do_with_nosync = false;
+            options_p->which_method = NO_SYNC;
         }
 
         if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
@@ -209,10 +204,11 @@ static void false_sharing_impl(const Options* options_p)
                 true); 
     }
 
-    if (!options_p->do_with_atomic)
+    if (options_p->which_method == MUTEX)
     {
         incremented_gs = calloc(options_p->job_count, sizeof(uint32_t)); 
-    } else {
+    } else if (options_p->which_method == ATOMIC) 
+    {
         incremented_atom_gs = calloc(options_p->job_count, sizeof(_Atomic uint32_t)); 
     }
 
@@ -220,7 +216,7 @@ static void false_sharing_impl(const Options* options_p)
             options_p->job_count,
             sizeof(pthread_t));
     
-    if (!options_p->do_with_atomic)
+    if (options_p->which_method == MUTEX)
     {
         pthread_mutex_init(
                 &shared_var_mtx,
@@ -228,6 +224,12 @@ static void false_sharing_impl(const Options* options_p)
     }
     
     uint64_t avg_time = 0;
+    typedef void* (*thread_callback)(void*);
+    thread_callback callbacks[] = {
+        &increment_nosync_callback,
+        &increment_locks_callback,
+        &increment_atomic_callback,
+    };
     // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
@@ -236,11 +238,7 @@ static void false_sharing_impl(const Options* options_p)
             uint32_t err = pthread_create(
                     &threads[i],
                     NULL,
-                    !options_p->do_with_atomic 
-                            ? (options_p->do_with_nosync
-                                    ? &increment_nosync_callback
-                                    : &increment_locks_callback)
-                            : &increment_atomic_callback,
+                    callbacks[options_p->which_method],
                     (void*)(i));
         }
         // now we wait for all the threads to finish
@@ -257,7 +255,7 @@ static void false_sharing_impl(const Options* options_p)
 
     free(threads);
 
-    if (!options_p->do_with_atomic)
+    if (options_p->which_method == MUTEX)
     {
         pthread_mutex_destroy(&shared_var_mtx);
     }
@@ -271,9 +269,9 @@ static void false_sharing_impl(const Options* options_p)
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
             printf("%d!",
-                    !options_p->do_with_atomic
-                    ? incremented_gs[i]/options_p->tries
-                    : atomic_load(&incremented_atom_gs[i])/options_p->tries);
+                    !options_p->which_method == ATOMIC
+                            ? incremented_gs[i]/options_p->tries
+                            : atomic_load(&incremented_atom_gs[i])/options_p->tries);
         }
         
         printf("This took %f msecs!", 
@@ -283,10 +281,7 @@ static void false_sharing_impl(const Options* options_p)
         sprintf(
                 text,
                 "[EXERCISE 3]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
-                exercise_type[
-                        !options_p->do_with_atomic 
-                        ? 0 
-                        : 1],
+                exercise_type[options_p->which_method],
                 options_p->job_count,
                 options_p->incr_times,
                 (double)avg_time/(double)nsec_to_msec_factor);
@@ -297,19 +292,17 @@ static void false_sharing_impl(const Options* options_p)
     } else {
         printf(
                 "[EXERCISE 3]\ntype = %s\njobs = %d\nloops\ntime = %f\n",
-                exercise_type[
-                        !options_p->do_with_atomic 
-                        ? 0 
-                        : 1],
+                exercise_type[options_p->which_method],
                 options_p->job_count,
                 options_p->incr_times,
                 (double)avg_time/(double)nsec_to_msec_factor);
     } 
 
-    if (!options_p->do_with_atomic)
+    if (options_p->which_method == MUTEX)
     {
         free(incremented_gs);
-    } else {
+    } else if (options_p->which_method == ATOMIC) 
+    {
         free(incremented_atom_gs);
     }
 } 
