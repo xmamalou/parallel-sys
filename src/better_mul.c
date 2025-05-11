@@ -1,0 +1,401 @@
+/*
+    Parallel Systems Exercise Batch 1 -- Solutions to Batch 1 of Exercises for the Parallel
+    Systems Course of the "Computer Engineering" Masters Programme of NKUA
+    Copyright (C) 2025 Christoforos-Marios Mamaloukas
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#include "exercises.h"
+
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <linux/limits.h>
+#include <omp.h>
+
+#include "utility.h"
+
+// -- TYPES --- //
+
+typedef enum Which {
+    UNOPTIMIZED = 0,
+    OPTIMIZED   = 1,
+} Which;
+
+typedef struct Options {
+    uint32_t job_count;
+    Which    which_implm;
+    char     matrix_dims[PATH_MAX];
+    bool     is_upper_triangular;
+    char     data_path[PATH_MAX];
+    uint32_t tries;
+} Options;
+
+// --- CONSTANTS --- //
+
+#define BIG_BUFF 256
+
+static const char* implm_string[] = {
+    "unoptimized",
+    "optimized",
+};
+
+static const uint64_t nsec_to_sec_factor  = 1000000000;
+static const uint64_t nsec_to_msec_factor = 1000000;
+
+// --- FUNCTION DECLARATIONS --- //
+
+static void read_flags(
+        char** flags, uint32_t flag_count,
+        Options* options_p);
+
+/// @brief The original unoptimized version of the algorithm
+static void better_mul_unopt(const Options* options_p);
+/// @brief The optimized version of the algorithm for upper triangular matrices
+static void better_mul_opt(const Options* options_p);
+
+// --- FUNCTION DEFINITIONS --- //
+
+void better_mul(
+        char** flags, uint32_t flag_count) 
+{
+    Options options = {
+        .job_count           = 1,
+        .which_implm         = OPTIMIZED,
+        .matrix_dims         = "",
+        .is_upper_triangular = false,
+        .data_path           = "",
+        .tries               = 1,
+    };
+    read_flags(
+            flags, flag_count,
+            &options);
+
+    // If the user wants to use stdout to output data, we suppress any messages to
+    // allow only the output that would normally be logged to show up
+    if ( strcmp(options.data_path, "") != 0 ) 
+    {
+        printf("\x1b[33mParallel Systems Postgrad Course -- Project 1 -- Christoforos-Marios Mamaloukas\n\n"
+                "--- EXERCISE 5 (Better matrix multiplication) ---\n"
+                "* You will run the %s version\n"
+                "* You want %u jobs\n"
+                "* The matrix will have dimensions %s\n"
+                "* The matrix is %supper triangular\n"
+                "* Data will be saved to %s\n"
+                "* The experiment will be run %d tries\n"
+                "-------------------------------------------------\n\n\x1b[0m",
+                implm_string[options.which_implm],
+                options.job_count, 
+                options.matrix_dims,
+                options.is_upper_triangular ? "" : "not ",
+                options.data_path,
+                options.tries);
+    }
+
+    typedef void (*Implementations)(const Options*);
+    Implementations functions[] = {
+        &better_mul_unopt,
+        &better_mul_opt,
+    };
+    functions[options.which_implm](&options);
+
+    return;
+}
+
+static void read_flags(
+    char** flags, uint32_t flag_count,
+    Options* options_p)
+{
+    for (uint32_t i = 0; i < flag_count; i++)
+    {
+        if (strstr(flags[i], "-fO0") != NULL)
+        {
+            options_p->which_implm = UNOPTIMIZED;
+        }
+
+        if (strstr(flags[i], "-fO1") != NULL)
+        {
+            if (options_p->which_implm == UNOPTIMIZED)
+            {
+                fprintf(stderr,
+                        "\x1b[31mHey! You requested the optimized version, even though"
+                        " you already want the unoptimized one! IGNORING!\n\x1b[0m");
+            }
+
+            options_p->which_implm = OPTIMIZED;
+        }
+
+        if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
+        {
+            char* equal_char_p = strchr(flags[i], '=');
+            options_p->job_count = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
+        }
+
+        if (strstr(flags[i], "-fmatrix=") != NULL || strstr(flags[i], "-fm=") != NULL)
+        {
+            char* equal_char_p     = strchr(flags[i], '=');
+            strncat(
+                    options_p->matrix_dims,
+                    &equal_char_p[1],
+                    strlen(&equal_char_p[1]));
+        }
+
+        if (strstr(flags[i], "-fupper") != NULL || strstr(flags[i], "-fu") != NULL)
+        {
+            options_p->is_upper_triangular = true;
+        }
+
+        if (strstr(flags[i], "-ffile=") != NULL || strstr(flags[i], "-ff=") != NULL)
+        {
+            char* equal_char_p     = strchr(flags[i], '=');
+            if (equal_char_p[1] != '~' || equal_char_p[1] != '/')
+            {
+                getcwd(options_p->data_path, PATH_MAX);
+                strcat(options_p->data_path, "/");
+            }
+            strncat(
+                    options_p->data_path,
+                    &equal_char_p[1],
+                    strlen(&equal_char_p[1]));
+        }
+
+        if (strstr(flags[i], "-ftries=") != NULL || strstr(flags[i], "-ft=") != NULL)
+        {
+            char* equal_char_p = strchr(flags[i], '=');
+            options_p->tries = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
+        }
+    }
+}
+
+static void better_mul_unopt(const Options* options_p) 
+{
+    LOG_T log = NULL;
+    if ( strcmp(options_p->data_path, "") != 0 )
+    {
+        printf("Working on that array... ");
+
+        log = open_log(
+                options_p->data_path,
+                true); 
+    }
+
+    uint32_t columns = 0, rows = 0;
+    sscanf(
+            options_p->matrix_dims,
+            "%ux%u",
+            &columns,
+            &rows);
+    if (columns != rows && options_p->is_upper_triangular)
+    {
+        fprintf(stderr,
+                "\x1b[31mHey! You requested an upper triangular matrix," 
+                "but the dimensions you provided are not square! IGNORING ROWS!\n\x1b[0m");
+        return;
+    }
+
+    uint32_t seed = 10000;
+    double* A = calloc(
+            columns*(options_p->is_upper_triangular ? columns : rows),
+            sizeof(double));
+    for (uint32_t i = 0; i < columns; i++)
+    {
+        for (uint32_t j = 0; j < (options_p->is_upper_triangular ? columns : rows); j++)
+        {
+            if (options_p->is_upper_triangular && j < i)
+            {
+                A[i + columns*j] = 0.0;
+            } else {
+                A[i + columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
+            }
+            seed++;
+        }
+    }
+
+    double* x = calloc(
+            rows,
+            sizeof(double));
+    for (uint32_t i = 0; i < rows; i++)
+    {
+        x[i] = (double)rand_r(&seed)/(double)RAND_MAX;
+    }
+
+    double* y = calloc(
+            columns,
+            sizeof(double));
+    
+
+    uint64_t avg_time = 0;
+    
+    for (uint32_t i = 0; i < options_p->tries; i++)
+    {
+        BENCHMARK_T benchmark = start_benchmark();
+        #pragma omp parallel for num_threads(thread_count)  \
+                default(none) private(i, j, temp)  shared(A, x, y, width, length)
+        for (uint32_t i = 0; i < columns; i++) 
+        {
+                double temp = 0.0;
+                for (uint32_t j = 0; j < rows; j++) 
+                {
+                    temp += A[i + columns*j]*x[j];
+                }
+                y[i] = temp;
+        }
+        avg_time += stop_benchmark(benchmark);
+    }
+
+   if ( strcmp(options_p->data_path, "") != 0 )
+    {
+        printf("DONE! The result is this array:\n"); 
+        
+        for (uint32_t i = 0; i < columns; i++)
+        {
+            printf("%d\n", y[i]);
+        }
+        
+        printf("This took %f msecs!", 
+                (double)avg_time/(double)nsec_to_msec_factor);
+
+        char text[PATH_MAX] = "";
+        sprintf(
+                text,
+                "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
+                implm_string[options_p->which_implm],
+                options_p->job_count,
+                (double)avg_time/(double)nsec_to_msec_factor);
+        write_log(
+                log,
+                text);
+        close_log(log);
+    } else {
+        printf(
+                "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
+                implm_string[options_p->which_implm],
+                options_p->job_count,
+                (double)avg_time/(double)nsec_to_msec_factor);
+    } 
+
+    free(A);
+    free(x);
+    free(y);
+}
+
+static void better_mul_opt(const Options* options_p) 
+{
+    LOG_T log = NULL;
+    if ( strcmp(options_p->data_path, "") != 0 )
+    {
+        printf("Working on that array... ");
+
+        log = open_log(
+                options_p->data_path,
+                true); 
+    }
+
+    uint32_t columns = 0, rows = 0;
+    sscanf(
+            options_p->matrix_dims,
+            "%ux%u",
+            &columns,
+            &rows);
+
+    uint32_t seed = 10000;
+    double* A = calloc(
+            columns*(options_p->is_upper_triangular ? columns : rows),
+            sizeof(double));
+    for (uint32_t i = 0; i < columns; i++)
+    {
+        for (uint32_t j = 0; j < (options_p->is_upper_triangular ? columns : rows); j++)
+        {
+            if (options_p->is_upper_triangular && j < i)
+            {
+                A[i + columns*j] = 0.0;
+            } else {
+                A[i + columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
+            }
+            seed++;
+        }
+    }
+
+    seed = 10000;
+    double* x = calloc(
+            rows,
+            sizeof(double));
+    for (uint32_t i = 0; i < rows; i++)
+    {
+        x[i] = (double)rand_r(&seed)/(double)RAND_MAX;
+        seed++;
+    }
+
+    double* y = calloc(
+            columns,
+            sizeof(double));
+
+    uint64_t avg_time = 0;
+    
+    for (uint32_t i = 0; i < options_p->tries; i++)
+    {
+        BENCHMARK_T benchmark = start_benchmark();
+        #pragma omp parallel for num_threads(thread_count)  \
+                default(none) private(i, j, temp)  shared(A, x, y, width, length)
+        for (uint32_t i = 0; i < columns; i++) 
+        {
+                double temp = 0.0;
+                for (uint32_t j = i; j < columns - i; j++) 
+                {
+                    temp += A[i + columns*j]*x[j];
+                }
+                y[i] = temp;
+        }
+        avg_time += stop_benchmark(benchmark);
+    }
+
+   if ( strcmp(options_p->data_path, "") != 0 )
+    {
+        printf("DONE! The result is this array:\n"); 
+        
+        for (uint32_t i = 0; i < columns; i++)
+        {
+            printf("%d\n", y[i]);
+        }
+
+        free(A);
+        free(x);
+        free(y);
+        
+        printf("This took %f msecs!", 
+                (double)avg_time/(double)nsec_to_msec_factor);
+
+        char text[PATH_MAX] = "";
+        sprintf(
+                text,
+                "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
+                implm_string[options_p->which_implm],
+                options_p->job_count,
+                (double)avg_time/(double)nsec_to_msec_factor);
+        write_log(
+                log,
+                text);
+        close_log(log);
+    } else {
+        printf(
+                "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
+                implm_string[options_p->which_implm],
+                options_p->job_count,
+                (double)avg_time/(double)nsec_to_msec_factor);
+    } 
+}

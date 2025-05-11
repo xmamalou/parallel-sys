@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <libgen.h>
 
 #include "exercises.h"
 
@@ -61,6 +62,8 @@ const ExerciseFunc exercise_funcptrs[] = {
     shared_var,
     false_sharing,
     barriers,
+    better_mul,
+    game_of_life,
 };
 
 // --- FUNCTIONS --- //
@@ -80,6 +83,9 @@ void read_arguments(
 /// @return The amount of arguments that refer to flags
 uint32_t count_flags(
         char** argv_slice, uint32_t argv_slice_length);
+
+/// @brief Print the exercise list
+inline static void print_list();
 
 // --- FUNC DEFINITIONS --- //
 
@@ -103,48 +109,15 @@ int main(
     if (exercise_options.which == HELP) 
     {
         printf("\x1b[33mParallel Systems Postgrad Course -- Project 1 -- Christoforos-Marios Mamaloukas\n"
+                "Usage: %s OPTION [ARGUMENT] [FLAGS...]\n\n"
                 "Available options:\n"
                 "\t* -h, --help: Shows the current message\n"
                 "\t* -l, --list: List exercises and supported flags\n"
-                "\t* -e <number>, --exercise <number>: Executes Exercise <number>. Must be at least 1 and at most 9\n\x1b[0m");
+                "\t* -e <number>, --exercise <number>: Executes Exercise <number>. Must be at least 1 and at most 9\n\x1b[0m",
+                    basename(argv[0]));
         return 0;
     } else if (exercise_options.which == LIST) {
-        printf("\x1b[33mParallel Systems Postgrad Course -- Project 1 -- Christoforos-Marios Mamaloukas\n"
-                "Exercises:\n"
-                "\t(1) Calculate π using the Monte Carlo method\n"
-                "\tFlags (prefixed with -f):\n"
-                "\t\t* s, serial: Run the serial version of the algorithm\n"
-                "\t\t* p, parallel: Run the parallel version of the algorithm (default)\n"
-                "\t\t* omp: Run the openmp version of the parallel algorithm (if not specified, runs the pthread version)\n"
-                "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
-                "\t\t* n=<number>, throws=<number>: Number of throws for the Monte Carlo experiment\n"
-                "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
-                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time and value of π\n"
-                "\t(2) Increment a shared variable\n"
-                "\tFlags (prefixed with -f):\n"
-                "\t\t* l, locks: Run the version using locks (default)\n"
-                "\t\t* a, atomic: Run the version using atomics\n"
-                "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
-                "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
-                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
-                "\t(3) False sharing\n"
-                "\tFlags (prefixed with -f):\n"
-                "\t\t* l, locks: Run the version using locks (default)\n"
-                "\t\t* a, atomic: Run the version using atomics\n"
-                "\t\t* ns, nosync: Run with no synchronization\n"
-                "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
-                "\t\t* i=<number>, incr=<number>: How many loops each thread should run\n"
-                "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
-                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
-                "\t(3) Barriers"
-                "\tFlags (prefixed with -f):\n"
-                "\t\t* p, pthreads: Run with pthreads barriers implementation\n"
-                "\t\t* c, custom: Run with custom barriers implementation\n"
-                "\t\t* b, busywait: Run with busywaiting\n"
-                "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
-                "\t\t* n=<number>: How many loops each thread should run\n"
-                "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
-                "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n\x1b[0m");
+        print_list();
         return 0;
     }
 
@@ -220,4 +193,62 @@ uint32_t count_flags(
     }
 
     return count;
+}
+
+static void print_list()
+{
+    printf("\x1b[33mParallel Systems Postgrad Course -- Project 1 -- Christoforos-Marios Mamaloukas\n"
+            "Exercises (run each exercise with `-e` followed by its number as shown here):\n"
+            "\t(1) Calculate π using the Monte Carlo method\n"
+            "\tFlags (prefixed with -f):\n"
+            "\t\t* s, serial: Run the serial version of the algorithm\n"
+            "\t\t* p, parallel: Run the parallel version of the algorithm (default)\n"
+            "\t\t* omp: Run the openmp version of the parallel algorithm (if not specified, runs the pthread version)\n"
+            "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* n=<number>, throws=<number>: Number of throws for the Monte Carlo experiment\n"
+            "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time and value of π\n"
+            "\t(2) Increment a shared variable\n"
+            "\tFlags (prefixed with -f):\n"
+            "\t\t* l, locks: Run the version using locks (default)\n"
+            "\t\t* a, atomic: Run the version using atomics\n"
+            "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+            "\t(3) False sharing\n"
+            "\tFlags (prefixed with -f):\n"
+            "\t\t* l, locks: Run the version using locks (default)\n"
+            "\t\t* a, atomic: Run the version using atomics\n"
+            "\t\t* ns, nosync: Run with no synchronization\n"
+            "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* i=<number>, incr=<number>: How many loops each thread should run\n"
+            "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+            "\t(4) Barriers\n"
+            "\tFlags (prefixed with -f):\n"
+            "\t\t* p, pthreads: Run with pthreads barriers implementation\n"
+            "\t\t* c, custom: Run with custom barriers implementation\n"
+            "\t\t* b, busywait: Run with busywaiting\n"
+            "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* n=<number>: How many loops each thread should run\n"
+            "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+            "\t(5) Better multiplication\n"
+            "\tFlags (prefixed with -f):\n"
+            "\t\t* O0: Run the original unoptimized version\n"
+            "\t\t* O1: Run the optimized version\n"
+            "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* m=<number>x<number>, matrix=<number>x<number>: The dimensions of the matrix to generate\n"
+            "\t\t* u, upper: The generated matrix is upper triangular\n"
+            "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+            "\t(6) Game of Life\n"
+            "\tFlags (prefixed with -f):\n"
+            "\t\t* s, serial: Run the serial version\n"
+            "\t\t* p, parallel: Run the parallel version\n"
+            "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* g=<number>, generations=<number>: The amount of generations to run\n"
+            "\t\t* m=<number>x<number>, matrix=<number>x<number>: The dimensions of the matrix to generate\n"
+            "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n\x1b[0m");
 }

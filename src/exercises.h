@@ -35,4 +35,16 @@ void false_sharing(
 void barriers(
         char** flags, uint32_t flag_count);
 
+void better_mul(
+        char** flags, uint32_t flag_count);
+
+void game_of_life(
+        char** flags, uint32_t flag_count);
+
+void gaussian_elimination(
+        char** flags, uint32_t flag_count);
+
+void merge_sort(
+        char** flags, uint32_t flag_count);
+
 #endif /* __EXERCISES_H__ */ 
