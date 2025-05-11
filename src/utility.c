@@ -47,6 +47,11 @@ typedef struct Barrier {
     uint32_t        curr_claimers;
 } Barrier;
 
+typedef struct Matrix {
+    uint32_t dims[2];
+    double*  matrix;
+} Matrix;
+
 // --- CONSTANTS --- //
 
 const uint64_t nsecs_in_sec = 1000000000;
