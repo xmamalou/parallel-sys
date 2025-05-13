@@ -29,6 +29,7 @@
 #include <linux/limits.h>
 
 #include "utility.h"
+#include "macros.h"
 
 // --- TYPES --- //
 
@@ -57,14 +58,12 @@ static pthread_mutex_t  shared_var_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p);
+FLAG_READER_DECL();
 
-static void shared_var_impl(const Options* options_p);
+EXERCISE_IMPLM_DECL(shared_var_impl);
 
-static void* increment_locks_callback(void* args);
-static void* increment_atomic_callback(void* args);
+CALLBACK_DECL(increment_locks);
+CALLBACK_DECL(increment_atomic);
 
 // --- FUNCTION DEFINITIONS --- //
 
@@ -106,70 +105,19 @@ void shared_var(
     return;
 }
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p)
+FLAG_READER(options_p)
 {
-    for (uint32_t i = 0; i < flag_count; i++)
-    {
-        if (strcmp(flags[i], "-flock") == 0 || strcmp(flags[i], "-fl") == 0)
-        {
-            if (options_p->do_with_atomic)
-            {
-                fprintf(stderr,
-                        "\x1b[31mHey! You requested execution using locks, even though"
-                        " you already want it using atomics! IGNORING!\n\x1b[0m");
-                continue;
-            }
+    SET_FLAG("-flock", options_p->do_with_atomic, false);
+    SET_FLAG("-fl", options_p->do_with_atomic, false);
 
-            options_p->do_with_atomic = false;
-        }
+    SET_FLAG("-fatom", options_p->do_with_atomic, true);
+    SET_FLAG("-fa", options_p->do_with_atomic, true);
 
-        if (strcmp(flags[i], "-fatom") == 0 || strcmp(flags[i], "-fa") == 0)
-        {
-            options_p->do_with_atomic = true;
-        }
-
-        if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->job_count = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-
-        if (strstr(flags[i], "-ffile=") != NULL || strstr(flags[i], "-ff=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            if (equal_char_p[1] != '~' || equal_char_p[1] != '/')
-            {
-                getcwd(options_p->data_path, PATH_MAX);
-                strcat(options_p->data_path, "/");
-            }
-            strncat(
-                    options_p->data_path,
-                    &equal_char_p[1],
-                    strlen(&equal_char_p[1]));
-        }
-
-        if (strstr(flags[i], "-ftries=") != NULL || strstr(flags[i], "-ft=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->tries = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-    }
+    END_FLAG_READER();
 }
 
 static void shared_var_impl(const Options* options_p)
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("Working on that variable... ");
-
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
-    
     pthread_t* threads = calloc(
             options_p->job_count,
             sizeof(pthread_t));
@@ -215,39 +163,14 @@ static void shared_var_impl(const Options* options_p)
     }
     
     avg_time      /= options_p->tries;
-
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("DONE! The result is %d! This took %f msecs!", 
-                !options_p->do_with_atomic
-                        ? incremented_g/options_p->tries
-                        : atomic_load(&incremented_atom_g)/options_p->tries, 
-                (double)avg_time/(double)nsec_to_msec_factor);
-
-        char text[PATH_MAX] = "";
-        sprintf(
-                text,
-                "[EXERCISE 2]\ntype = %s\njobs = %d\ntime = %f\n",
-                exercise_type[
-                    !options_p->do_with_atomic 
-                    ? 0 
-                    : 1],
-                options_p->job_count,
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf(
-                "[EXERCISE 2]\ntype = %s\njobs = %d\ntime = %f\n",
-                exercise_type[
-                    !options_p->do_with_atomic 
-                    ? 0 
-                    : 1],
-                options_p->job_count,
-                (double)avg_time/(double)nsec_to_msec_factor);
-    } 
+    LOG(
+            "[EXERCISE 2]\ntype = %s\njobs = %d\ntime = %f\n",
+            exercise_type[
+                !options_p->do_with_atomic 
+                ? 0 
+                : 1],
+            options_p->job_count,
+            (double)avg_time/(double)nsec_to_msec_factor); 
 } 
 
 static void* increment_locks_callback(void* args)

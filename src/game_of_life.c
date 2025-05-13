@@ -29,6 +29,7 @@
 #include <omp.h>
 
 #include "utility.h"
+#include "macros.h"
 
 // -- TYPES --- //
 
@@ -66,9 +67,7 @@ static pthread_mutex_t throws_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
-static void read_flags(
-        char** flags, uint32_t flag_count,
-        Options* options_p);
+FLAG_READER_DECL();
 
 /// @brief Checks if the cell at (i, j) is alive
 /// @param A the matrix to check
@@ -82,9 +81,9 @@ static bool is_alive(
         uint32_t i, uint32_t j);
 
 /// @brief The original unoptimized version of the algorithm
-static void game_of_life_serial(const Options* options_p);
+EXERCISE_IMPLM_DECL(game_of_life_serial);
 /// @brief The optimized version of the algorithm for upper triangular matrices
-static void game_of_life_parallel(const Options* options_p);
+EXERCISE_IMPLM_DECL(game_of_life_parallel);
 
 // --- FUNCTION DEFINITIONS --- //
 
@@ -134,67 +133,19 @@ void game_of_life(
     return;
 }
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p)
+FLAG_READER(options_p)
 {
-    for (uint32_t i = 0; i < flag_count; i++)
-    {
-        if (strstr(flags[i], "-fs") != NULL || strstr(flags[i], "-fserial") != NULL)
-        {
-            fprintf(stderr,
-                    "\x1b[31mHey! You requested the serial version, even though"
-                    " you already want the parallel one! IGNORING!\n\x1b[0m");
-            options_p->which_algo = SERIAL;
-        }
+    SET_FLAG("-fs", options_p->which_algo, SERIAL);
+    SET_FLAG("-fserial", options_p->which_algo, SERIAL);
 
-        if (strstr(flags[i], "-fp") != NULL || strstr(flags[i], "-fparallel") != NULL)
-        {
+    SET_FLAG("-fp", options_p->which_algo, PARALLEL);
+    SET_FLAG("-fparallel", options_p->which_algo, PARALLEL);
 
-            options_p->which_algo = PARALLEL;
-        }
+    SET_FLAG_WITH_NUM("-fgen", options_p->generations, ll);
 
-        if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->job_count = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
+    SET_FLAG_WITH_STRING("-fmatrix=", options_p->matrix_dims);
 
-        if (strstr(flags[i], "-fgenerations=") != NULL || strstr(flags[i], "-fg=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->generations = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-
-        if (strstr(flags[i], "-fmatrix=") != NULL || strstr(flags[i], "-fm=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            strncat(
-                    options_p->matrix_dims,
-                    &equal_char_p[1],
-                    strlen(&equal_char_p[1]));
-        }
-
-        if (strstr(flags[i], "-ffile=") != NULL || strstr(flags[i], "-ff=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            if (equal_char_p[1] != '~' || equal_char_p[1] != '/')
-            {
-                getcwd(options_p->data_path, PATH_MAX);
-                strcat(options_p->data_path, "/");
-            }
-            strncat(
-                    options_p->data_path,
-                    &equal_char_p[1],
-                    strlen(&equal_char_p[1]));
-        }
-
-        if (strstr(flags[i], "-ftries=") != NULL || strstr(flags[i], "-ft=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->tries = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-    }
+    END_FLAG_READER();
 }
 
 static bool is_alive(
@@ -231,15 +182,6 @@ static bool is_alive(
 
 static void game_of_life_serial(const Options* options_p) 
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("Working on that array... ");
-
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
 
     uint32_t columns = 0, rows = 0;
     sscanf(
@@ -283,34 +225,13 @@ static void game_of_life_serial(const Options* options_p)
         avg_time += stop_benchmark(benchmark);
     }
 
-   if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        
-        printf("This took %f msecs!", 
-                (double)avg_time/(double)nsec_to_msec_factor);
-
-        char text[PATH_MAX] = "";
-        sprintf(
-                text,
-                "[EXERCISE 6]\ntype = %s\njobs = %d\nmatrix = %s\ngenerations = %d\ntime = %f\n",
-                implm_string[options_p->which_algo],
-                options_p->job_count,
-                options_p->matrix_dims,
-                options_p->generations,
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf(
-                "[EXERCISE 6]\ntype = %s\njobs = %d\nmatrix = %s\ngenerations = %d\ntime = %f\n",
-                implm_string[options_p->which_algo],
-                options_p->job_count,
-                options_p->matrix_dims,
-                options_p->generations,
-                (double)avg_time/(double)nsec_to_msec_factor);
-    } 
+    LOG(
+            "[EXERCISE 6]\ntype = %s\njobs = %d\nmatrix = %s\ngenerations = %d\ntime = %f\n",
+            implm_string[options_p->which_algo],
+            options_p->job_count,
+            options_p->matrix_dims,
+            options_p->generations,
+            (double)avg_time/(double)nsec_to_msec_factor);
 
     free(A[1]);
     free(A[0]);

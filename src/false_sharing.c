@@ -29,6 +29,7 @@
 #include <linux/limits.h>
 
 #include "utility.h"
+#include "macros.h"
 
 // --- TYPES --- //
 
@@ -65,16 +66,13 @@ static pthread_mutex_t   shared_var_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p);
+FLAG_READER_DECL();
 
-static void false_sharing_impl(const Options* options_p);
+EXERCISE_IMPLM_DECL(false_sharing_impl);
 
-// args -> the threadnumber, cast to uint32_t
-static void* increment_nosync_callback(void* args);
-static void* increment_locks_callback(void* args);
-static void* increment_atomic_callback(void* args);
+CALLBACK_DECL(increment_nosync);
+CALLBACK_DECL(increment_locks);
+CALLBACK_DECL(increment_atomic);
 
 // --- FUNCTION DEFINITIONS --- //
 
@@ -100,7 +98,7 @@ void false_sharing(
                 "---- EXERCISE 3 (False sharing) ----\n"
                 "* You selected the version that uses %s\n"
                 "* You want %u jobs\n"
-                "* Each thread will update %d times"
+                "* Each thread will update %d times\n"
                 "* Data will be saved to %s\n"
                 "* The experiment will be run %d tries\n"
                 "------------------------------------\n\n\x1b[0m", 
@@ -116,94 +114,25 @@ void false_sharing(
     return;
 }
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p)
+FLAG_READER(options_p)
 {
-    for (uint32_t i = 0; i < flag_count; i++)
-    {
-        if (strcmp(flags[i], "-flock") == 0 || strcmp(flags[i], "-fl") == 0)
-        {
-            if (options_p->which_method == ATOMIC)
-            {
-                printf("\x1b[31mHey! You requested execution using locks, even though"
-                    " you already want it using atomics! IGNORING!\n\x1b[0m");
-                continue;
-            }
+    SET_FLAG("-flock", options_p->which_method, MUTEX);
+    SET_FLAG("-fl", options_p->which_method, MUTEX);
 
-            options_p->which_method = MUTEX;
-        }
+    SET_FLAG("-fatom", options_p->which_method, ATOMIC);
+    SET_FLAG("-fa", options_p->which_method, ATOMIC);
 
-        if (strcmp(flags[i], "-fatom") == 0 || strcmp(flags[i], "-fa") == 0)
-        {
-            if (options_p->which_method == MUTEX)
-            {
-                printf("\x1b[31mHey! You requested execution using locks, even though"
-                    " you already want atomics! IGNORING!\n\x1b[0m");
-                continue;
-            }
+    SET_FLAG("-fno_sync", options_p->which_method, NO_SYNC);
+    SET_FLAG("-fns", options_p->which_method, NO_SYNC);
 
-            options_p->which_method = ATOMIC;
-        }
+    SET_FLAG_WITH_NUM("-fincr=", options_p->incr_times, i);
+    SET_FLAG_WITH_NUM("-fi=", options_p->incr_times, i);
 
-        if (strcmp(flags[i], "-fnosync") == 0 || strcmp(flags[i], "-fns") == 0)
-        {
-            if (options_p->which_method == MUTEX || options_p->which_method == ATOMIC)
-            {
-                printf("\x1b[31mHey! You requested execution with no synchronization, even though"
-                    " you already want some! IGNORING!\n\x1b[0m");
-                continue;
-            }
-
-            options_p->which_method = NO_SYNC;
-        }
-
-        if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->job_count = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-
-        if (strstr(flags[i], "-fincr=") != NULL || strstr(flags[i], "-fi=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->incr_times = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-
-        if (strstr(flags[i], "-ffile=") != NULL || strstr(flags[i], "-ff=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            if (equal_char_p[1] != '~' || equal_char_p[1] != '/')
-            {
-                getcwd(options_p->data_path, PATH_MAX);
-                strcat(options_p->data_path, "/");
-            }
-            strncat(
-                    options_p->data_path,
-                    &equal_char_p[1],
-                    strlen(&equal_char_p[1]));
-        }
-
-        if (strstr(flags[i], "-ftries=") != NULL || strstr(flags[i], "-ft=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->tries = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-    }
+    END_FLAG_READER();
 }
 
 static void false_sharing_impl(const Options* options_p)
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("Working on that array... ");
-
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
-
     if (options_p->which_method == MUTEX)
     {
         incremented_gs = calloc(options_p->job_count, sizeof(uint32_t)); 
@@ -262,41 +191,12 @@ static void false_sharing_impl(const Options* options_p)
     
     avg_time      /= options_p->tries;
 
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("DONE! The result is this array:\n"); 
-        
-        for (uint32_t i = 0; i < options_p->job_count; i++)
-        {
-            printf("%d!",
-                    !options_p->which_method == ATOMIC
-                            ? incremented_gs[i]/options_p->tries
-                            : atomic_load(&incremented_atom_gs[i])/options_p->tries);
-        }
-        
-        printf("This took %f msecs!", 
-                (double)avg_time/(double)nsec_to_msec_factor);
-
-        char text[PATH_MAX] = "";
-        sprintf(
-                text,
-                "[EXERCISE 3]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
-                exercise_type[options_p->which_method],
-                options_p->job_count,
-                options_p->incr_times,
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf(
-                "[EXERCISE 3]\ntype = %s\njobs = %d\nloops\ntime = %f\n",
-                exercise_type[options_p->which_method],
-                options_p->job_count,
-                options_p->incr_times,
-                (double)avg_time/(double)nsec_to_msec_factor);
-    } 
+    LOG(
+            "[EXERCISE 3]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
+            exercise_type[options_p->which_method],
+            options_p->job_count,
+            options_p->incr_times,
+            (double)avg_time/(double)nsec_to_msec_factor);
 
     if (options_p->which_method == MUTEX)
     {

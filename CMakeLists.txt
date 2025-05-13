@@ -6,6 +6,10 @@ project(parallel_systems_vol1
         LANGUAGES C)
 
 set(APP_NAME exe)
+
+include_directories(
+        src/)
+
 set(SRCFILES 
         src/main.c 
         src/pi_calc.c

@@ -31,12 +31,18 @@
 #include <linux/limits.h>
 
 #include "utility.h"
+#include "macros.h"
 
 // --- TYPES --- //
 
+typedef enum Which {
+    PTHREADS = 0,
+    CUSTOM   = 1,
+    BUSYWAIT = 2,
+} Which;
+
 typedef struct Options {
-    bool     do_with_busywait;
-    bool     do_with_custom;
+    Which    which_implm;
     uint32_t tries;
     uint32_t job_count;
     uint64_t incr_times;
@@ -66,16 +72,13 @@ static uint32_t          current_claimers_g;
 
 // --- FUNCTION DECLARATIONS --- //
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p);
+FLAG_READER_DECL();
 
-static void barriers_impl(const Options* options_p);
+EXERCISE_IMPLM_DECL(barriers_impl);
 
-// args -> the number of iterations to do, cast to uint64_t
-static void* barriers_native_callback(void* args);
-static void* barriers_custom_callback(void* args);
-static void* barriers_custom_busywait_callback(void* args);
+CALLBACK_DECL(barriers_native);
+CALLBACK_DECL(barriers_custom);
+CALLBACK_DECL(barriers_custom_busywait);
 
 // --- FUNCTION DEFINITIONS --- //
 
@@ -84,8 +87,7 @@ void barriers(
 {
     Options options = {
         .job_count        = 1,
-        .do_with_busywait = false,
-        .do_with_custom   = false,
+        .which_implm      = PTHREADS,
         .data_path        = "",
         .tries            = 1,
         .incr_times       = 1,
@@ -106,12 +108,7 @@ void barriers(
                 "* Data will be saved to %s\n"
                 "* The experiment will be run %d tries\n"
                 "------------------------------------\n\n\x1b[0m", 
-                exercise_type[
-                        !options.do_with_custom 
-                                ? 0 
-                                : (options.do_with_busywait
-                                        ? 2
-                                        : 1)],
+                exercise_type[options.which_implm],
                 options.job_count, 
                 options.incr_times,
                 options.data_path,
@@ -123,99 +120,61 @@ void barriers(
     return;
 }
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p)
+FLAG_READER(options_p)
 {
-    for (uint32_t i = 0; i < flag_count; i++)
-    {
-        if (strcmp(flags[i], "-fcustom") == 0 || strcmp(flags[i], "-fc") == 0)
-        {
-            options_p->do_with_custom = true;
-        }
 
-        if (strcmp(flags[i], "-fbusywait") == 0 || strcmp(flags[i], "-fb") == 0)
-        {
-            options_p->do_with_custom = true;
-            options_p->do_with_busywait = true;
-        } 
+        // Which implementation to use
+        SET_FLAG("-fcustom", options_p->which_implm, CUSTOM);
+        SET_FLAG("-fc", options_p->which_implm, CUSTOM);
 
-        if (strcmp(flags[i], "-fpthreads") == 0 || strcmp(flags[i], "-fp") == 0)
-        {
-            if (options_p->do_with_custom || options_p->do_with_busywait)
-            {
-                printf("\x1b[31mHey! You requested execution using the pthreads implementation of"
-                    "barriers, even though you already selected the custom ones. IGNORING!\n\x1b[0m");
-                continue;
-            }
+        SET_FLAG("-fbusywait", options_p->which_implm, BUSYWAIT);
+        SET_FLAG("-fb", options_p->which_implm, BUSYWAIT);
 
-            options_p->do_with_custom = false;
-        }
+        SET_FLAG("-fpthreads", options_p->which_implm, PTHREADS);
+        SET_FLAG("-fp", options_p->which_implm, PTHREADS);
+        //
 
-        if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->job_count = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
+        // how many times
+        SET_FLAG_WITH_NUM("-fn=", options_p->incr_times, ll);
+        //
 
-        if (strstr(flags[i], "-fn=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->incr_times = atoll(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-
-        if (strstr(flags[i], "-ffile=") != NULL || strstr(flags[i], "-ff=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            if (equal_char_p[1] != '~' || equal_char_p[1] != '/')
-            {
-                getcwd(options_p->data_path, PATH_MAX);
-                strcat(options_p->data_path, "/");
-            }
-            strncat(
-                    options_p->data_path,
-                    &equal_char_p[1],
-                    strlen(&equal_char_p[1]));
-        }
-
-        if (strstr(flags[i], "-ftries=") != NULL || strstr(flags[i], "-ft=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->tries = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-    }
+        END_FLAG_READER();
 }
 
 static void barriers_impl(const Options* options_p)
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
-
     pthread_t* threads = calloc(
             options_p->job_count,
             sizeof(pthread_t));
     
-    if (!options_p->do_with_custom)
+    switch (options_p->which_implm)
     {
-        pthread_barrier_init(
-            &shared_var_barr,
-            NULL, options_p->job_count);
-    } else if (!options_p->do_with_busywait) {
-        shared_var_custom_barr = create_barrier(options_p->job_count);
-    } else {
+    case BUSYWAIT:
         pthread_mutex_init(
                 &mutex,
                 NULL);
         claimers_g = options_p->job_count;
         cond_g     = false;
+        break;
+    case CUSTOM:
+        shared_var_custom_barr = create_barrier(options_p->job_count);
+        break;
+    
+    case PTHREADS:
+    default:
+        pthread_barrier_init(
+                &shared_var_barr,
+                NULL, options_p->job_count);
+        break;
     }
     
     uint64_t avg_time = 0;
+    typedef void* (*thread_callback)(void*);
+    thread_callback callbacks[] = {
+        &barriers_native_callback,
+        &barriers_custom_callback,
+        &barriers_custom_busywait_callback,
+    };
     // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
@@ -224,11 +183,7 @@ static void barriers_impl(const Options* options_p)
             uint32_t err = pthread_create(
                     &threads[i],
                     NULL,
-                    !options_p->do_with_custom
-                            ? &barriers_native_callback
-                            : (options_p->do_with_busywait
-                                    ? &barriers_custom_busywait_callback
-                                    : &barriers_custom_callback),
+                    callbacks[options_p->which_implm],
                     (void*)(options_p->incr_times));
         }
         // now we wait for all the threads to finish
@@ -245,48 +200,28 @@ static void barriers_impl(const Options* options_p)
 
     free(threads);
 
-    if (!options_p->do_with_custom)
+    switch (options_p->which_implm)
     {
-        pthread_barrier_destroy(&shared_var_barr);
-    } else if (!options_p->do_with_busywait) {
-        destroy_barrier(shared_var_custom_barr);
-    } else {
+    case BUSYWAIT:
         pthread_mutex_destroy(&mutex);
+        break;
+    case CUSTOM:
+        destroy_barrier(shared_var_custom_barr);
+        break;
+    case PTHREADS:
+    default:
+        pthread_barrier_destroy(&shared_var_barr);
+        break;
     }
     
     avg_time      /= options_p->tries;
 
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("Done with the barriers! This took %f msecs!", 
-                (double)avg_time/(double)nsec_to_msec_factor);
-
-        char text[PATH_MAX] = "";
-        sprintf(
-                text,
-                "[EXERCISE 4]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
-                exercise_type[
-                        !options_p->do_with_custom 
-                                ? 0 
-                                : 1],
-                options_p->job_count,
-                options_p->incr_times,
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf(
-                "[EXERCISE 4]\ntype = %s\njobs = %d\nloops\ntime = %f\n",
-                exercise_type[
-                        !options_p->do_with_custom 
-                        ? 0 
-                        : 1],
-                options_p->job_count,
-                options_p->incr_times,
-                (double)avg_time/(double)nsec_to_msec_factor);
-    } 
+    LOG(
+            "[EXERCISE 4]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
+            exercise_type[options_p->which_implm],
+            options_p->job_count,
+            options_p->incr_times,
+            (double)avg_time/(double)nsec_to_msec_factor);
 } 
 
 static void* barriers_native_callback(void* args)

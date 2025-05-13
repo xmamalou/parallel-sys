@@ -28,6 +28,7 @@
 #include <omp.h>
 
 #include "utility.h"
+#include "macros.h"
 
 // -- TYPES --- //
 
@@ -68,18 +69,16 @@ static pthread_mutex_t throws_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
-static void read_flags(
-        char** flags, uint32_t flag_count,
-        Options* options_p);
+FLAG_READER_DECL();
 
-inline static void pi_calc_serial(const Options* options_p);
-inline static void pi_calc_parallel(const Options* options_p);
-inline static void pi_calc_openmp(const Options* options_p);
+EXERCISE_IMPLM_DECL(pi_calc_serial);
+EXERCISE_IMPLM_DECL(pi_calc_parallel);
+EXERCISE_IMPLM_DECL(pi_calc_openmp);
 
 /// @brief Function that calculates amount of successful throws
 /// @param args Pointer to thread parametrization structure
 /// @return NULL
-void* succ_throws_callback(void* args);
+CALLBACK_DECL(succ_throws);
 
 // --- FUNCTION DEFINITIONS --- //
 
@@ -127,112 +126,25 @@ void pi_calc(
     return;
 }
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p)
+FLAG_READER(options_p)
 {
-    for (uint32_t i = 0; i < flag_count; i++)
-    {
-        if (strcmp(flags[i], "-fs") == 0 || strcmp(flags[i], "-fserial") == 0)
-        {
-            options_p->which_method = SERIAL;
-        }
+    // Which implementation to use
+    SET_FLAG("-fserial", options_p->which_method, SERIAL);
+    SET_FLAG("-fs", options_p->which_method, SERIAL);
 
-        if (strcmp(flags[i], "-fomp") == 0)
-        {
-            if (options_p->which_method == SERIAL)
-            {
-                fprintf(stderr,
-                        "\x1b[31mHey! You requested parallel execution, even though"
-                        " you already want serial! IGNORING!\n\x1b[0m");
-                continue;
-            }
+    SET_FLAG("-fpthreads", options_p->which_method, PTHREADS);
+    SET_FLAG("-fp", options_p->which_method, PTHREADS);
 
-            if(options_p->which_method == PTHREADS)
-            {
-                fprintf(stderr, 
-                        "\x1b[31mHey! You requested OpenMP to be used, even though"
-                        " you want Pthreads! IGNORING!\n\x1b[0m");
-                continue;
-            }
+    SET_FLAG("-fomp", options_p->which_method, OPENMP);
 
-            options_p->which_method == OPENMP;
-        }
+    SET_FLAG_WITH_NUM("-fthrows=", options_p->throw_count, ll);
+    SET_FLAG_WITH_NUM("-fn=", options_p->throw_count, ll);
 
-        if (strcmp(flags[i], "-fpthreads") == 0 || strcmp(flags[i], "-fp") == 0)
-        {
-            if (options_p->which_method == SERIAL)
-            {
-                fprintf(stderr,
-                        "\x1b[31mHey! You requested parallel execution, even though"
-                        " you already want serial! IGNORING!\n\x1b[0m");
-                continue;
-            }
-
-            if(options_p->which_method == OPENMP)
-            {
-                fprintf(stderr, 
-                        "\x1b[31mHey! You requested Pthreads to be used, even though"
-                        " you want OpenMP! IGNORING!\n\x1b[0m");
-                continue;
-            }
-
-            options_p->which_method == PTHREADS;
-        }
-
-        if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
-        {
-            if(options_p->which_method = SERIAL)
-            {
-                fprintf(stderr, 
-                        "\x1b[31mHey! You requested a custom amount of jobs, even though"
-                        " you want serial execution! IGNORING!\n\x1b[0m");
-                continue;
-            }
-
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->job_count = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-
-        if (strstr(flags[i], "-fthrows=") != NULL || strstr(flags[i], "-fn=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            options_p->throw_count = atoll(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-
-        if (strstr(flags[i], "-ffile=") != NULL || strstr(flags[i], "-ff=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            if (equal_char_p[1] != '~' || equal_char_p[1] != '/')
-            {
-                getcwd(options_p->data_path, PATH_MAX);
-                strcat(options_p->data_path, "/");
-            }
-            strncat(
-                    options_p->data_path,
-                    &equal_char_p[1],
-                    strlen(&equal_char_p[1]));
-        }
-
-        if (strstr(flags[i], "-ftries=") != NULL || strstr(flags[i], "-ft=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->tries = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-    }
+    END_FLAG_READER();
 }
 
 inline static void pi_calc_serial(const Options* options_p) 
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("I estimate that π is approximately equal to... ");
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
-
     uint64_t avg_succ_throws = 0; // throws inside the circle
     uint64_t avg_time        = 0;
     uint32_t seed        = 10000;
@@ -267,43 +179,16 @@ inline static void pi_calc_serial(const Options* options_p)
 
     float pi_val = 4*avg_succ_throws/(double)options_p->throw_count;
 
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        char text[PATH_MAX] = "";
-        printf("%f!\nThis took %f msecs!", 
-                pi_val, 
-                (double)avg_time/(double)nsec_to_msec_factor);
-        
-        sprintf(
-                text,
-                "[EXERCISE 1]\ntype = serial\nthrows = %d\nπ = %f\ntime = %f\n",
-                options_p->throw_count, 
-                pi_val, 
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf("[EXERCISE 1]\ntype = serial\nthrows = %d\nπ = %f\ntime = %f\n", 
+    LOG(
+            "[EXERCISE 1]\ntype = serial\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
+            options_p->job_count,
             options_p->throw_count,
             pi_val, 
             (double)avg_time/(double)nsec_to_msec_factor);
-    }
 }
 
 inline static void pi_calc_parallel(const Options* options_p) 
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("I estimate that π is approximately equal to... ");
-
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
-    
     uint64_t throws_per_job = options_p->throw_count/options_p->job_count;
     ThreadParams parameters = {
         .throw_count = throws_per_job
@@ -345,47 +230,17 @@ inline static void pi_calc_parallel(const Options* options_p)
     succ_throws_g /= options_p->tries;
     float pi_val   = 4*succ_throws_g/(double)options_p->throw_count;
 
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("%f!\nThis took %f msecs!", 
-                pi_val, 
-                (double)avg_time/(double)nsec_to_msec_factor);
-
-        char text[PATH_MAX] = "";
-        sprintf(
-                text,
-                "[EXERCISE 1]\ntype = pthreads\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
-                options_p->job_count,
-                options_p->throw_count,
-                pi_val, 
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf(
-                "[EXERCISE 1]\ntype = pthreads\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
-                options_p->job_count,
-                options_p->throw_count,
-                pi_val, 
-                (double)avg_time/(double)nsec_to_msec_factor);
-    } 
+    LOG(
+        "[EXERCISE 1]\ntype = serial\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
+        options_p->job_count,
+        options_p->throw_count,
+        pi_val, 
+        (double)avg_time/(double)nsec_to_msec_factor);
 
 }
 
 inline static void pi_calc_openmp(const Options* options_p)
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("I estimate that π is approximately equal to... ");
-
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
-    
     uint64_t throws_per_job  = options_p->throw_count/options_p->job_count;
     uint64_t avg_succ_throws = 0;
     uint64_t avg_time        = 0;
@@ -418,32 +273,12 @@ inline static void pi_calc_openmp(const Options* options_p)
     avg_succ_throws /= options_p->tries;
     float pi_val     = 4*avg_succ_throws/(double)options_p->throw_count;
     avg_time        /= options_p->tries;
-    if ( strcmp(options_p->data_path, "") != 0 ) 
-    {
-        printf("%f!\nThis took %f msecs!", 
-                pi_val, 
-                (double)avg_time/(double)nsec_to_msec_factor);
-
-        char text[PATH_MAX] = "";
-        sprintf(
-                text,
-                "[EXERCISE 1]\ntype = openmp\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n", 
-                options_p->job_count, 
-                options_p->throw_count,
-                pi_val, 
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf(
-            "[EXERCISE 1]\ntype = openmp\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n", 
-            options_p->job_count, 
-            options_p->throw_count,
-            pi_val, 
-            (double)avg_time/(double)nsec_to_msec_factor);
-    }
+    LOG(
+        "[EXERCISE 1]\ntype = serial\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
+        options_p->job_count,
+        options_p->throw_count,
+        pi_val, 
+        (double)avg_time/(double)nsec_to_msec_factor);
 }
 
 void* succ_throws_callback(void* args)

@@ -29,6 +29,7 @@
 #include <omp.h>
 
 #include "utility.h"
+#include "macros.h"
 
 // -- TYPES --- //
 
@@ -60,14 +61,12 @@ static const uint64_t nsec_to_msec_factor = 1000000;
 
 // --- FUNCTION DECLARATIONS --- //
 
-static void read_flags(
-        char** flags, uint32_t flag_count,
-        Options* options_p);
+FLAG_READER_DECL();
 
 /// @brief The original unoptimized version of the algorithm
-static void better_mul_unopt(const Options* options_p);
+EXERCISE_IMPLM_DECL(better_mul_unopt);
 /// @brief The optimized version of the algorithm for upper triangular matrices
-static void better_mul_opt(const Options* options_p);
+EXERCISE_IMPLM_DECL(better_mul_opt);
 
 // --- FUNCTION DEFINITIONS --- //
 
@@ -117,83 +116,21 @@ void better_mul(
     return;
 }
 
-static void read_flags(
-    char** flags, uint32_t flag_count,
-    Options* options_p)
+FLAG_READER(options_p)
 {
-    for (uint32_t i = 0; i < flag_count; i++)
-    {
-        if (strstr(flags[i], "-fO0") != NULL)
-        {
-            options_p->which_implm = UNOPTIMIZED;
-        }
+    // Which implementation to use
+    SET_FLAG("-fO0", options_p->which_implm, UNOPTIMIZED);
+    SET_FLAG("-fO1", options_p->which_implm, OPTIMIZED);
 
-        if (strstr(flags[i], "-fO1") != NULL)
-        {
-            if (options_p->which_implm == UNOPTIMIZED)
-            {
-                fprintf(stderr,
-                        "\x1b[31mHey! You requested the optimized version, even though"
-                        " you already want the unoptimized one! IGNORING!\n\x1b[0m");
-            }
+    SET_FLAG_WITH_STRING("-fmatrix=", options_p->matrix_dims);
 
-            options_p->which_implm = OPTIMIZED;
-        }
-
-        if (strstr(flags[i], "-fjobs=") != NULL || strstr(flags[i], "-fj=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->job_count = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-
-        if (strstr(flags[i], "-fmatrix=") != NULL || strstr(flags[i], "-fm=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            strncat(
-                    options_p->matrix_dims,
-                    &equal_char_p[1],
-                    strlen(&equal_char_p[1]));
-        }
-
-        if (strstr(flags[i], "-fupper") != NULL || strstr(flags[i], "-fu") != NULL)
-        {
-            options_p->is_upper_triangular = true;
-        }
-
-        if (strstr(flags[i], "-ffile=") != NULL || strstr(flags[i], "-ff=") != NULL)
-        {
-            char* equal_char_p     = strchr(flags[i], '=');
-            if (equal_char_p[1] != '~' || equal_char_p[1] != '/')
-            {
-                getcwd(options_p->data_path, PATH_MAX);
-                strcat(options_p->data_path, "/");
-            }
-            strncat(
-                    options_p->data_path,
-                    &equal_char_p[1],
-                    strlen(&equal_char_p[1]));
-        }
-
-        if (strstr(flags[i], "-ftries=") != NULL || strstr(flags[i], "-ft=") != NULL)
-        {
-            char* equal_char_p = strchr(flags[i], '=');
-            options_p->tries = atoi(&(equal_char_p[1])); // same as (equal_char_p + sizeof(char)), allows us to get the number next to the `=` sign
-        }
-    }
+    SET_FLAG("-fupper", options_p->is_upper_triangular, true);
+    
+    END_FLAG_READER();
 }
 
 static void better_mul_unopt(const Options* options_p) 
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("Working on that array... ");
-
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
-
     uint32_t columns = 0, rows = 0;
     sscanf(
             options_p->matrix_dims,
@@ -258,36 +195,13 @@ static void better_mul_unopt(const Options* options_p)
         avg_time += stop_benchmark(benchmark);
     }
 
-   if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("DONE! The result is this array:\n"); 
-        
-        for (uint32_t i = 0; i < columns; i++)
-        {
-            printf("%d\n", y[i]);
-        }
-        
-        printf("This took %f msecs!", 
-                (double)avg_time/(double)nsec_to_msec_factor);
-
-        char text[PATH_MAX] = "";
-        sprintf(
-                text,
-                "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
-                implm_string[options_p->which_implm],
-                options_p->job_count,
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf(
-                "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
-                implm_string[options_p->which_implm],
-                options_p->job_count,
-                (double)avg_time/(double)nsec_to_msec_factor);
-    } 
+    LOG(
+            "EXERCISE 5]\ntype = %s\njobs = %d\ndims = %s\nupper_triagonal = %d\ntime = %f\n",
+            implm_string[options_p->which_implm],
+            options_p->job_count,
+            options_p->matrix_dims,
+            options_p->is_upper_triangular,
+            (double)avg_time/(double)nsec_to_msec_factor);
 
     free(A);
     free(x);
@@ -296,16 +210,6 @@ static void better_mul_unopt(const Options* options_p)
 
 static void better_mul_opt(const Options* options_p) 
 {
-    LOG_T log = NULL;
-    if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("Working on that array... ");
-
-        log = open_log(
-                options_p->data_path,
-                true); 
-    }
-
     uint32_t columns = 0, rows = 0;
     sscanf(
             options_p->matrix_dims,
@@ -364,38 +268,14 @@ static void better_mul_opt(const Options* options_p)
         avg_time += stop_benchmark(benchmark);
     }
 
-   if ( strcmp(options_p->data_path, "") != 0 )
-    {
-        printf("DONE! The result is this array:\n"); 
-        
-        for (uint32_t i = 0; i < columns; i++)
-        {
-            printf("%d\n", y[i]);
-        }
+   LOG(
+            "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
+            implm_string[options_p->which_implm],
+            options_p->job_count,
+            (double)avg_time/(double)nsec_to_msec_factor);
 
-        free(A);
-        free(x);
-        free(y);
-        
-        printf("This took %f msecs!", 
-                (double)avg_time/(double)nsec_to_msec_factor);
-
-        char text[PATH_MAX] = "";
-        sprintf(
-                text,
-                "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
-                implm_string[options_p->which_implm],
-                options_p->job_count,
-                (double)avg_time/(double)nsec_to_msec_factor);
-        write_log(
-                log,
-                text);
-        close_log(log);
-    } else {
-        printf(
-                "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
-                implm_string[options_p->which_implm],
-                options_p->job_count,
-                (double)avg_time/(double)nsec_to_msec_factor);
-    } 
+    free(A);
+    free(x);
+    free(y);
 }
+

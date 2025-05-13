@@ -23,28 +23,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void pi_calc(
-        char** flags, uint32_t flag_count);
+#include "macros.h"
 
-void shared_var(
-        char** flags, uint32_t flag_count);
-
-void false_sharing(
-        char** flags, uint32_t flag_count);
-
-void barriers(
-        char** flags, uint32_t flag_count);
-
-void better_mul(
-        char** flags, uint32_t flag_count);
-
-void game_of_life(
-        char** flags, uint32_t flag_count);
-
-void gaussian_elimination(
-        char** flags, uint32_t flag_count);
-
-void merge_sort(
-        char** flags, uint32_t flag_count);
+EXERCISE_DECL(pi_calc);
+EXERCISE_DECL(shared_var);
+EXERCISE_DECL(false_sharing);
+EXERCISE_DECL(barriers);
+EXERCISE_DECL(better_mul);
+EXERCISE_DECL(game_of_life);
+EXERCISE_DECL(gaussian_elimination);
+EXERCISE_DECL(merge_sort);
 
 #endif /* __EXERCISES_H__ */ 
