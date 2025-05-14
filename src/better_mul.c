@@ -180,13 +180,14 @@ static void better_mul_unopt(const Options* options_p)
     
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
+        uint32_t i, j, temp;
         BENCHMARK_T benchmark = start_benchmark();
-        #pragma omp parallel for num_threads(thread_count)  \
-                default(none) private(i, j, temp)  shared(A, x, y, width, length)
-        for (uint32_t i = 0; i < columns; i++) 
+        #pragma omp parallel for num_threads(options_p->job_count)  \
+                default(none) private(i, j, temp)  shared(A, x, y, columns, rows)
+        for (i = 0; i < columns; i++) 
         {
-                double temp = 0.0;
-                for (uint32_t j = 0; j < rows; j++) 
+                temp = 0.0;
+                for (j = 0; j < rows; j++) 
                 {
                     temp += A[i + columns*j]*x[j];
                 }
@@ -253,13 +254,14 @@ static void better_mul_opt(const Options* options_p)
     
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
+        uint32_t i, j, temp;
         BENCHMARK_T benchmark = start_benchmark();
-        #pragma omp parallel for num_threads(thread_count)  \
-                default(none) private(i, j, temp)  shared(A, x, y, width, length)
-        for (uint32_t i = 0; i < columns; i++) 
+        #pragma omp parallel for num_threads(options_p->job_count)  \
+                default(none) private(i, j, temp)  shared(A, x, y, columns, rows)
+        for (i = 0; i < columns; i++) 
         {
-                double temp = 0.0;
-                for (uint32_t j = i; j < columns - i; j++) 
+                temp = 0.0;
+                for (j = i; j < columns - i; j++) 
                 {
                     temp += A[i + columns*j]*x[j];
                 }

@@ -248,7 +248,7 @@ inline static void pi_calc_openmp(const Options* options_p)
     for (uint32_t j = 0; j < options_p->tries; j++)
     {
         BENCHMARK_T bench_h = start_benchmark();
-        #pragma omp parallel for num_threads(job_count) \
+        #pragma omp parallel for num_threads(options_p->job_count) \
                 reduction(+: avg_succ_throws)
         for (uint32_t k = 0; k < options_p->job_count; k++)
         {
