@@ -212,13 +212,13 @@ EXERCISE_IMPLM_DECL(false_sharing_impl)
     }
 } 
 
-static void* increment_nosync_callback(void* args)
+CALLBACK_DECL(increment_nosync)
 {
     uint32_t threadnum = (uint32_t)args;
     incremented_gs[threadnum]++;
 }
 
-static void* increment_locks_callback(void* args)
+CALLBACK_DECL(increment_locks)
 {
     uint32_t threadnum = (uint32_t)args;
 
@@ -229,7 +229,7 @@ static void* increment_locks_callback(void* args)
     return NULL;
 }
 
-static void* increment_atomic_callback(void* args)
+CALLBACK_DECL(increment_atomic)
 {
     uint32_t threadnum = (uint32_t)args;
 

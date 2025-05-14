@@ -225,7 +225,7 @@ EXERCISE_IMPLM_DECL(barriers_impl)
     }
 } 
 
-static void* barriers_native_callback(void* args)
+CALLBACK_DECL(barriers_native)
 {
     uint64_t loop_times = (uint64_t)args;
 
@@ -237,7 +237,7 @@ static void* barriers_native_callback(void* args)
     return NULL;
 }
 
-static void* barriers_custom_callback(void* args)
+CALLBACK_DECL(barriers_custom)
 {
     uint64_t loop_times = (uint64_t)args;
 
@@ -250,7 +250,7 @@ static void* barriers_custom_callback(void* args)
 }
 
 // TODO: Doesn't work
-static void* barriers_custom_busywait_callback(void* args)
+CALLBACK_DECL(barriers_custom_busywait)
 {
     uint64_t loop_times = (uint64_t)args;
 
