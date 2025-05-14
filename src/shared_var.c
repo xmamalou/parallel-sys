@@ -37,6 +37,7 @@ typedef struct Options {
     bool     do_with_atomic;
     uint32_t tries;
     uint32_t job_count;
+    uint64_t loops;
     char     data_path[PATH_MAX];
 } Options;
 
@@ -72,6 +73,7 @@ void shared_var(
 {
     Options options = {
         .job_count      = 1,
+        .loops          = 1,
         .do_with_atomic = false,
         .data_path      = "",
         .tries          = 1,
@@ -88,6 +90,7 @@ void shared_var(
                 "---- EXERCISE 2 (Shared Variable) ----\n"
                 "* You selected the version that uses %s\n"
                 "* You want %u jobs\n"
+                "* The variable will be incremented %lu times\n"
                 "* Data will be saved to %s\n"
                 "* The experiment will be run %d tries\n"
                 "--------------------------------------\n\n\x1b[0m", 
@@ -96,11 +99,27 @@ void shared_var(
                         ? 0 
                         : 1],
                 options.job_count, 
+                options.loops,
                 options.data_path,
                 options.tries);
     }
 
-    shared_var_impl(&options);
+    double time_of_execution = 0;
+    shared_var_impl(
+            &options,
+            &time_of_execution);
+
+    CALCULATE_TIME(time_of_execution);
+
+    LOG(
+            "[EXERCISE 2]\ntype = %s\njobs = %d\nloops = %lu\ntime = %f\n",
+            exercise_type[
+                !options.do_with_atomic 
+                ? 0 
+                : 1],
+            options.job_count,
+            options.loops,
+            time_of_execution); 
 
     return;
 }
@@ -113,10 +132,13 @@ FLAG_READER(options_p)
     SET_FLAG("-fatom", options_p->do_with_atomic, true);
     SET_FLAG("-fa", options_p->do_with_atomic, true);
 
+    SET_FLAG_WITH_NUM("-fincr=", options_p->loops, ll);
+    SET_FLAG_WITH_NUM("-fi=", options_p->loops, ll);
+
     END_FLAG_READER();
 }
 
-static void shared_var_impl(const Options* options_p)
+EXERCISE_IMPLM_DECL(shared_var_impl)
 {
     pthread_t* threads = calloc(
             options_p->job_count,
@@ -129,7 +151,6 @@ static void shared_var_impl(const Options* options_p)
                 NULL);
     }
     
-    uint64_t avg_time = 0;
     // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
@@ -141,7 +162,7 @@ static void shared_var_impl(const Options* options_p)
                     !options_p->do_with_atomic 
                             ? &increment_locks_callback
                             : &increment_atomic_callback,
-                    NULL);
+                    (void*)(options_p->loops));
         }
         // now we wait for all the threads to finish
         BENCHMARK_T bench_h = start_benchmark();
@@ -152,7 +173,7 @@ static void shared_var_impl(const Options* options_p)
                     NULL);
             threads[i] == NULL;
         }
-        avg_time += stop_benchmark(bench_h);
+        RECORD(bench_h);
     }
 
     free(threads);
@@ -162,31 +183,33 @@ static void shared_var_impl(const Options* options_p)
         pthread_mutex_destroy(&shared_var_mtx);
     }
     
-    avg_time      /= options_p->tries;
-    LOG(
-            "[EXERCISE 2]\ntype = %s\njobs = %d\ntime = %f\n",
-            exercise_type[
-                !options_p->do_with_atomic 
-                ? 0 
-                : 1],
-            options_p->job_count,
-            (double)avg_time/(double)nsec_to_msec_factor); 
 } 
 
-static void* increment_locks_callback(void* args)
+CALLBACK_DECL(increment_locks)
 {
+    uint64_t loops = (uint64_t)args;
+    
     pthread_mutex_lock(&shared_var_mtx);
-    incremented_g++;
+    for (uint64_t i = 0; i < loops; i++)
+    {   
+        incremented_g++;
+    }
     pthread_mutex_unlock(&shared_var_mtx);
 
     return NULL;
 }
 
-static void* increment_atomic_callback(void* args)
+CALLBACK_DECL(increment_atomic)
 {
-    uint64_t intrm = atomic_load(&incremented_atom_g);
-    intrm++;
-    atomic_store(&incremented_atom_g, intrm);
+    uint64_t loops = (uint64_t)args;
+
+    for (uint64_t i = 0; i < loops; i++)
+    {
+        uint64_t intrm = atomic_load(&incremented_atom_g);
+        intrm++;
+        atomic_store(&incremented_atom_g, intrm);
+    }
+   
 
     return NULL;
 }

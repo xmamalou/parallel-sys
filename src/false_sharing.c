@@ -109,7 +109,19 @@ void false_sharing(
                 options.tries);
     }
 
-    false_sharing_impl(&options);
+    double time_of_execution = 0;
+    false_sharing_impl(
+            &options,
+            &time_of_execution);
+
+    CALCULATE_TIME(time_of_execution);
+
+    LOG(
+        "[EXERCISE 3]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
+        exercise_type[options.which_method],
+        options.job_count,
+        options.incr_times,
+        time_of_execution);
 
     return;
 }
@@ -131,7 +143,7 @@ FLAG_READER(options_p)
     END_FLAG_READER();
 }
 
-static void false_sharing_impl(const Options* options_p)
+EXERCISE_IMPLM_DECL(false_sharing_impl)
 {
     if (options_p->which_method == MUTEX)
     {
@@ -152,9 +164,7 @@ static void false_sharing_impl(const Options* options_p)
                 NULL);
     }
     
-    uint64_t avg_time = 0;
-    typedef void* (*thread_callback)(void*);
-    thread_callback callbacks[] = {
+    CALLBACK_T callbacks[] = {
         &increment_nosync_callback,
         &increment_locks_callback,
         &increment_atomic_callback,
@@ -179,7 +189,7 @@ static void false_sharing_impl(const Options* options_p)
                     NULL);
             threads[i] == NULL;
         }
-        avg_time += stop_benchmark(bench_h);
+        RECORD(bench_h);
     }
 
     free(threads);
@@ -188,22 +198,17 @@ static void false_sharing_impl(const Options* options_p)
     {
         pthread_mutex_destroy(&shared_var_mtx);
     }
-    
-    avg_time      /= options_p->tries;
 
-    LOG(
-            "[EXERCISE 3]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
-            exercise_type[options_p->which_method],
-            options_p->job_count,
-            options_p->incr_times,
-            (double)avg_time/(double)nsec_to_msec_factor);
-
-    if (options_p->which_method == MUTEX)
+    switch (options_p->which_method)
     {
-        free(incremented_gs);
-    } else if (options_p->which_method == ATOMIC) 
-    {
-        free(incremented_atom_gs);
+        case NO_SYNC:
+            break;
+        case MUTEX:
+            free(incremented_gs);
+            break;
+        case ATOMIC:
+            free(incremented_atom_gs);
+            break;
     }
 } 
 

@@ -123,12 +123,24 @@ void game_of_life(
                 options.tries);
     }
 
-    typedef void (*Implementations)(const Options*);
-    Implementations functions[] = {
+    double time_of_execution = 0;
+    EXERCISE_IMPLM_T functions[] = {
         &game_of_life_serial,
         &game_of_life_parallel,
     };
-    functions[options.which_algo](&options);
+    functions[options.which_algo](
+            &options,
+            &time_of_execution);
+
+    CALCULATE_TIME(time_of_execution);
+
+    LOG(
+        "[EXERCISE 6]\ntype = %s\njobs = %d\nmatrix = %s\ngenerations = %d\ntime = %f\n",
+        implm_string[options.which_algo],
+        options.job_count,
+        options.matrix_dims,
+        options.generations,
+        time_of_execution);
 
     return;
 }
@@ -180,7 +192,7 @@ static bool is_alive(
     }
 }
 
-static void game_of_life_serial(const Options* options_p) 
+EXERCISE_IMPLM_DECL(game_of_life_serial)
 {
 
     uint32_t columns = 0, rows = 0;
@@ -222,22 +234,14 @@ static void game_of_life_serial(const Options* options_p)
             }
             which_matrix = ++which_matrix % 2;
         }
-        avg_time += stop_benchmark(benchmark);
+        RECORD(benchmark);
     }
-
-    LOG(
-            "[EXERCISE 6]\ntype = %s\njobs = %d\nmatrix = %s\ngenerations = %d\ntime = %f\n",
-            implm_string[options_p->which_algo],
-            options_p->job_count,
-            options_p->matrix_dims,
-            options_p->generations,
-            (double)avg_time/(double)nsec_to_msec_factor);
 
     free(A[1]);
     free(A[0]);
 }
 
-static void game_of_life_parallel(const Options* options_p) 
+EXERCISE_IMPLM_DECL(game_of_life_parallel)
 {
     
 }

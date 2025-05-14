@@ -115,7 +115,19 @@ void barriers(
                 options.tries);
     }
 
-    barriers_impl(&options);
+    double time_of_execution = 0;
+    barriers_impl(
+            &options,
+            &time_of_execution);
+
+    CALCULATE_TIME(time_of_execution);
+
+    LOG(
+        "[EXERCISE 4]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
+        exercise_type[options.which_implm],
+        options.job_count,
+        options.incr_times,
+        time_of_execution);
 
     return;
 }
@@ -141,7 +153,7 @@ FLAG_READER(options_p)
         END_FLAG_READER();
 }
 
-static void barriers_impl(const Options* options_p)
+EXERCISE_IMPLM_DECL(barriers_impl)
 {
     pthread_t* threads = calloc(
             options_p->job_count,
@@ -168,9 +180,7 @@ static void barriers_impl(const Options* options_p)
         break;
     }
     
-    uint64_t avg_time = 0;
-    typedef void* (*thread_callback)(void*);
-    thread_callback callbacks[] = {
+    CALLBACK_T callbacks[] = {
         &barriers_native_callback,
         &barriers_custom_callback,
         &barriers_custom_busywait_callback,
@@ -195,7 +205,7 @@ static void barriers_impl(const Options* options_p)
                     NULL);
             threads[i] == NULL;
         }
-        avg_time += stop_benchmark(bench_h);
+        RECORD(bench_h);
     }
 
     free(threads);
@@ -213,15 +223,6 @@ static void barriers_impl(const Options* options_p)
         pthread_barrier_destroy(&shared_var_barr);
         break;
     }
-    
-    avg_time      /= options_p->tries;
-
-    LOG(
-            "[EXERCISE 4]\ntype = %s\njobs = %d\nloops = %d\ntime = %f\n",
-            exercise_type[options_p->which_implm],
-            options_p->job_count,
-            options_p->incr_times,
-            (double)avg_time/(double)nsec_to_msec_factor);
 } 
 
 static void* barriers_native_callback(void* args)

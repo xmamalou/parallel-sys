@@ -42,6 +42,8 @@ typedef struct Options {
     uint32_t job_count;
     Which    which_implm;
     char     matrix_dims[PATH_MAX];
+    uint64_t columns;
+    uint64_t rows;
     bool     is_upper_triangular;
     char     data_path[PATH_MAX];
     uint32_t tries;
@@ -77,6 +79,8 @@ void better_mul(
         .job_count           = 1,
         .which_implm         = OPTIMIZED,
         .matrix_dims         = "",
+        .columns             = 2,
+        .rows                = 2,
         .is_upper_triangular = false,
         .data_path           = "",
         .tries               = 1,
@@ -106,12 +110,37 @@ void better_mul(
                 options.tries);
     }
 
-    typedef void (*Implementations)(const Options*);
-    Implementations functions[] = {
+    sscanf(
+        options.matrix_dims,
+        "%ux%u",
+        &options.columns,
+        &options.rows);
+    if (options.columns != options.rows && options.is_upper_triangular)
+    {
+        ERROR(
+            "Hey! You requested an upper triangular matrix," 
+            "but the dimensions you provided (%s) are not square! IGNORING ROWS!", 
+            options.matrix_dims);
+        options.rows = options.columns;
+    }
+
+    double time_of_execution = 0;
+
+    EXERCISE_IMPLM_T functions[] = {
         &better_mul_unopt,
         &better_mul_opt,
     };
-    functions[options.which_implm](&options);
+    functions[options.which_implm](
+            &options,
+            &time_of_execution);
+
+    CALCULATE_TIME(time_of_execution);
+
+    LOG(
+        "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
+        implm_string[options.which_implm],
+        options.job_count,
+        time_of_execution);
 
     return;
 }
@@ -123,114 +152,84 @@ FLAG_READER(options_p)
     SET_FLAG("-fO1", options_p->which_implm, OPTIMIZED);
 
     SET_FLAG_WITH_STRING("-fmatrix=", options_p->matrix_dims);
+    SET_FLAG_WITH_STRING("-fm=", options_p->matrix_dims);
 
     SET_FLAG("-fupper", options_p->is_upper_triangular, true);
+    SET_FLAG("-fu", options_p->is_upper_triangular, true);
     
     END_FLAG_READER();
 }
 
-static void better_mul_unopt(const Options* options_p) 
+EXERCISE_IMPLM_DECL(better_mul_unopt)
 {
-    uint32_t columns = 0, rows = 0;
-    sscanf(
-            options_p->matrix_dims,
-            "%ux%u",
-            &columns,
-            &rows);
-    if (columns != rows && options_p->is_upper_triangular)
-    {
-        fprintf(stderr,
-                "\x1b[31mHey! You requested an upper triangular matrix," 
-                "but the dimensions you provided are not square! IGNORING ROWS!\n\x1b[0m");
-        return;
-    }
-
     uint32_t seed = 10000;
     double* A = calloc(
-            columns*(options_p->is_upper_triangular ? columns : rows),
+            options_p->columns*(options_p->is_upper_triangular ? options_p->columns : options_p->rows),
             sizeof(double));
-    for (uint32_t i = 0; i < columns; i++)
+    for (uint32_t i = 0; i < options_p->columns; i++)
     {
-        for (uint32_t j = 0; j < (options_p->is_upper_triangular ? columns : rows); j++)
+        for (uint32_t j = 0; j < (options_p->is_upper_triangular ? options_p->columns : options_p->rows); j++)
         {
             if (options_p->is_upper_triangular && j < i)
             {
-                A[i + columns*j] = 0.0;
+                A[i + options_p->columns*j] = 0.0;
             } else {
-                A[i + columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
+                A[i + options_p->columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
             }
             seed++;
         }
     }
 
     double* x = calloc(
-            rows,
+            options_p->rows,
             sizeof(double));
-    for (uint32_t i = 0; i < rows; i++)
+    for (uint32_t i = 0; i < options_p->rows; i++)
     {
         x[i] = (double)rand_r(&seed)/(double)RAND_MAX;
     }
 
     double* y = calloc(
-            columns,
+            options_p->columns,
             sizeof(double));
-    
-
-    uint64_t avg_time = 0;
     
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
         uint32_t i, j, temp;
         BENCHMARK_T benchmark = start_benchmark();
         #pragma omp parallel for num_threads(options_p->job_count)  \
-                default(none) private(i, j, temp)  shared(A, x, y, columns, rows)
-        for (i = 0; i < columns; i++) 
+                default(none) private(i, j, temp)  shared(A, x, y, options_p)
+        for (i = 0; i < options_p->columns; i++) 
         {
                 temp = 0.0;
-                for (j = 0; j < rows; j++) 
+                for (j = 0; j < options_p->rows; j++) 
                 {
-                    temp += A[i + columns*j]*x[j];
+                    temp += A[i + options_p->columns*j]*x[j];
                 }
                 y[i] = temp;
         }
-        avg_time += stop_benchmark(benchmark);
+        *time_of_execution_p += stop_benchmark(benchmark);
     }
-
-    LOG(
-            "EXERCISE 5]\ntype = %s\njobs = %d\ndims = %s\nupper_triagonal = %d\ntime = %f\n",
-            implm_string[options_p->which_implm],
-            options_p->job_count,
-            options_p->matrix_dims,
-            options_p->is_upper_triangular,
-            (double)avg_time/(double)nsec_to_msec_factor);
 
     free(A);
     free(x);
     free(y);
 }
 
-static void better_mul_opt(const Options* options_p) 
+EXERCISE_IMPLM_DECL(better_mul_opt)
 {
-    uint32_t columns = 0, rows = 0;
-    sscanf(
-            options_p->matrix_dims,
-            "%ux%u",
-            &columns,
-            &rows);
-
     uint32_t seed = 10000;
     double* A = calloc(
-            columns*(options_p->is_upper_triangular ? columns : rows),
+            options_p->columns*(options_p->is_upper_triangular ? options_p->columns : options_p->rows),
             sizeof(double));
-    for (uint32_t i = 0; i < columns; i++)
+    for (uint32_t i = 0; i < options_p->columns; i++)
     {
-        for (uint32_t j = 0; j < (options_p->is_upper_triangular ? columns : rows); j++)
+        for (uint32_t j = 0; j < (options_p->is_upper_triangular ? options_p->columns : options_p->rows); j++)
         {
             if (options_p->is_upper_triangular && j < i)
             {
-                A[i + columns*j] = 0.0;
+                A[i + options_p->columns*j] = 0.0;
             } else {
-                A[i + columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
+                A[i + options_p->columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
             }
             seed++;
         }
@@ -238,43 +237,35 @@ static void better_mul_opt(const Options* options_p)
 
     seed = 10000;
     double* x = calloc(
-            rows,
+            options_p->rows,
             sizeof(double));
-    for (uint32_t i = 0; i < rows; i++)
+    for (uint32_t i = 0; i < options_p->rows; i++)
     {
         x[i] = (double)rand_r(&seed)/(double)RAND_MAX;
         seed++;
     }
 
     double* y = calloc(
-            columns,
+            options_p->columns,
             sizeof(double));
-
-    uint64_t avg_time = 0;
     
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
         uint32_t i, j, temp;
         BENCHMARK_T benchmark = start_benchmark();
         #pragma omp parallel for num_threads(options_p->job_count)  \
-                default(none) private(i, j, temp)  shared(A, x, y, columns, rows)
-        for (i = 0; i < columns; i++) 
+                default(none) private(i, j, temp)  shared(A, x, y, options_p)
+        for (i = 0; i < options_p->columns; i++) 
         {
                 temp = 0.0;
-                for (j = i; j < columns - i; j++) 
+                for (j = i; j < options_p->columns - i; j++) 
                 {
-                    temp += A[i + columns*j]*x[j];
+                    temp += A[i + options_p->columns*j]*x[j];
                 }
                 y[i] = temp;
         }
-        avg_time += stop_benchmark(benchmark);
+        RECORD(benchmark);
     }
-
-   LOG(
-            "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
-            implm_string[options_p->which_implm],
-            options_p->job_count,
-            (double)avg_time/(double)nsec_to_msec_factor);
 
     free(A);
     free(x);

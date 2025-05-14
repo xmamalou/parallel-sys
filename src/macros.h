@@ -6,8 +6,10 @@
         char** flags, uint32_t flag_count)
 
 #define EXERCISE_IMPLM_DECL(implementation_name) \
-    static void implementation_name(\
-        const Options* options_p)
+    static void implementation_name(const Options* options_p, double* time_of_execution_p)
+
+#define EXERCISE_IMPLM_T typedef void (*Implementation)(const Options*, double*); Implementation 
+#define CALLBACK_T typedef void* (*Callback)(void*); Callback
 
 #define CALLBACK_DECL(implementation_name) \
     static void* implementation_name##_callback(\
@@ -82,10 +84,10 @@
 
 /// Log a message to either the console or a file
 #define LOG(string, ...) \
-    if ( strcmp(options_p->data_path, "") != 0 ) \
+    if ( strcmp(options.data_path, "") != 0 ) \
     { \
         LOG_T log = open_log( \
-            options_p->data_path, \
+            options.data_path, \
             true); \
         printf(string, __VA_ARGS__); \
         char text[PATH_MAX] = ""; \
@@ -99,5 +101,20 @@
     } else { \
         printf(string, __VA_ARGS__); \
     }
+
+/// Record the current benchmark time
+#define RECORD(benchmark) \
+    *time_of_execution_p += stop_benchmark(benchmark)
+
+/// Calculate the average time of execution
+#define CALCULATE_TIME(time_of_exec) \
+    time_of_exec /= options.tries; \
+    time_of_exec /= nsec_to_msec_factor
+
+/// Print a warning message
+#define ERROR(string, ...) \
+    fprintf(stderr, "\x1b[31m"); \
+    fprintf(stderr, string, __VA_ARGS__); \
+    fprintf(stderr, "\x1b[0m\n"); \
 
 #endif /* _MACROS_H_ */

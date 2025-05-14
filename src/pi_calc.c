@@ -44,6 +44,7 @@ typedef struct Options {
     Which    which_method;
     char     data_path[PATH_MAX];
     uint32_t tries;
+    double*  pi_val_p;
 } Options;
 
 typedef struct ThreadParams {
@@ -91,6 +92,9 @@ void pi_calc(
         .which_method = PTHREADS,
         .data_path    = "",
         .tries        = 1,
+        .pi_val_p     = calloc(
+                1,
+                sizeof(double)),
     };
     read_flags(
             flags, flag_count,
@@ -115,13 +119,27 @@ void pi_calc(
                 options.tries);
     }
 
-    typedef void (*Implementations)(const Options*);
-    Implementations functions[] = {
+    double time_of_execution = 0;
+    EXERCISE_IMPLM_T functions[] = {
         &pi_calc_serial,
         &pi_calc_parallel,
         &pi_calc_openmp,
     };
-    functions[options.which_method](&options);
+    functions[options.which_method](
+            &options,
+            &time_of_execution);
+
+    CALCULATE_TIME(time_of_execution);
+
+    LOG(
+        "[EXERCISE 1]\ntype = %s\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
+        exercise_type[options.which_method],
+        options.job_count,
+        options.throw_count,
+        *(options.pi_val_p), 
+        time_of_execution);
+
+    free(options.pi_val_p);
 
     return;
 }
@@ -143,18 +161,11 @@ FLAG_READER(options_p)
     END_FLAG_READER();
 }
 
-inline static void pi_calc_serial(const Options* options_p) 
+EXERCISE_IMPLM_DECL(pi_calc_serial)
 {
     uint64_t avg_succ_throws = 0; // throws inside the circle
-    uint64_t avg_time        = 0;
     uint32_t seed        = 10000;
 
-    // we run the experiment as many times as it is requested; 
-    // to gain a bit of speed, we do the experiments in parallel, since they
-    // are independent from each other (and because we don't care to measure
-    // multithreaded performance)
-    #pragma omp parallel for num_threads(options_p->tries) \
-            reduction(+: avg_succ_throws, avg_time)
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
         BENCHMARK_T bench_h = start_benchmark();
@@ -171,28 +182,20 @@ inline static void pi_calc_serial(const Options* options_p)
         }
 
         avg_succ_throws += succ_throws;
-        avg_time        += stop_benchmark(bench_h);
+        RECORD(bench_h);
     }
 
     avg_succ_throws /= options_p->tries;
-    avg_time        /= options_p->tries;
 
-    float pi_val = 4*avg_succ_throws/(double)options_p->throw_count;
+    *(options_p->pi_val_p) = 4*avg_succ_throws/(double)options_p->throw_count;
 
-    LOG(
-            "[EXERCISE 1]\ntype = serial\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
-            options_p->job_count,
-            options_p->throw_count,
-            pi_val, 
-            (double)avg_time/(double)nsec_to_msec_factor);
+    
 }
 
-inline static void pi_calc_parallel(const Options* options_p) 
+EXERCISE_IMPLM_DECL(pi_calc_parallel) 
 {
     uint64_t throws_per_job = options_p->throw_count/options_p->job_count;
-    ThreadParams parameters = {
-        .throw_count = throws_per_job
-    };
+
     pthread_t* threads = calloc(
             options_p->job_count,
             sizeof(pthread_t));
@@ -200,7 +203,6 @@ inline static void pi_calc_parallel(const Options* options_p)
             &throws_mtx,
             NULL);
     
-    uint64_t avg_time = 0;
     // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
@@ -210,7 +212,7 @@ inline static void pi_calc_parallel(const Options* options_p)
                     &threads[i],
                     NULL,
                     &succ_throws_callback,
-                    &parameters);
+                    (void*)(throws_per_job));
         }
         // now we wait for all the threads to finish
         BENCHMARK_T bench_h = start_benchmark();
@@ -221,29 +223,19 @@ inline static void pi_calc_parallel(const Options* options_p)
                     NULL);
             threads[i] == NULL;
         }
-        avg_time += stop_benchmark(bench_h);
+        RECORD(bench_h);
     }
 
     free(threads);
     
-    avg_time      /= options_p->tries;
     succ_throws_g /= options_p->tries;
-    float pi_val   = 4*succ_throws_g/(double)options_p->throw_count;
-
-    LOG(
-        "[EXERCISE 1]\ntype = serial\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
-        options_p->job_count,
-        options_p->throw_count,
-        pi_val, 
-        (double)avg_time/(double)nsec_to_msec_factor);
-
+    *(options_p->pi_val_p) = 4*succ_throws_g/(double)options_p->throw_count;
 }
 
-inline static void pi_calc_openmp(const Options* options_p)
+EXERCISE_IMPLM_DECL(pi_calc_openmp)
 {
     uint64_t throws_per_job  = options_p->throw_count/options_p->job_count;
     uint64_t avg_succ_throws = 0;
-    uint64_t avg_time        = 0;
     
     for (uint32_t j = 0; j < options_p->tries; j++)
     {
@@ -267,27 +259,20 @@ inline static void pi_calc_openmp(const Options* options_p)
 
             avg_succ_throws += succ_throws;
         }
-        avg_time += stop_benchmark(bench_h);
+        RECORD(bench_h);
     }
 
-    avg_succ_throws /= options_p->tries;
-    float pi_val     = 4*avg_succ_throws/(double)options_p->throw_count;
-    avg_time        /= options_p->tries;
-    LOG(
-        "[EXERCISE 1]\ntype = serial\njobs = %d\nthrows = %d\nπ = %f\ntime = %f\n",
-        options_p->job_count,
-        options_p->throw_count,
-        pi_val, 
-        (double)avg_time/(double)nsec_to_msec_factor);
+    avg_succ_throws      /= options_p->tries;
+    *options_p->pi_val_p  = 4*avg_succ_throws/(double)options_p->throw_count;
 }
 
-void* succ_throws_callback(void* args)
+CALLBACK_DECL(succ_throws)
 {
-    ThreadParams* params = (ThreadParams*)args;
+    uint64_t throw_count = (uint64_t)args;
 
     uint64_t succ_throws = 0;
     uint32_t seed        = 10000;
-    for (uint64_t i = 0; i < params->throw_count; i++)
+    for (uint64_t i = 0; i < throw_count; i++)
     {
         double x = (double)rand_r(&seed)/(double)RAND_MAX, 
                 y = (double)rand_r(&seed)/(double)RAND_MAX;
