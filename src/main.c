@@ -64,6 +64,9 @@ const ExerciseFunc exercise_funcptrs[] = {
     barriers,
     better_mul,
     game_of_life,
+    gaussian_elimination,
+    merge_sort,
+    NULL, // Exercise 9 is not implemented and probably never will be because I can't stand writing C anymore
 };
 
 // --- FUNCTIONS --- //
@@ -250,5 +253,24 @@ static void print_list()
             "\t\t* g=<number>, generations=<number>: The amount of generations to run\n"
             "\t\t* m=<number>x<number>, matrix=<number>x<number>: The dimensions of the matrix to generate\n"
             "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
-            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n\x1b[0m");
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+            "\t(7) Gaussian elimination\n"
+            "\tFlags (prefixed with -f):\n"
+            "\t\t* s, serial: Run the serial version\n"
+            "\t\t* p, parallel: Run the parallel version\n"
+            "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* pc, per-col: Run the per-column version of the algorithm\n"
+            "\t\t* pr, per-row: Run the per-row version of the algorithm\n"
+            "\t\t* m=<number>, matrix=<number>: The dimension(s) of the matrix to generate (matrix is square)\n"
+            "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+            "\t(8) Merge sort\n"
+            "\tFlags (prefixed with -f):\n"
+            "\t\t* s, serial: Run the serial version\n"
+            "\t\t* p, parallel: Run the parallel version\n"
+            "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* n=<number>, elements=<number>: The number of elements to sort\n"
+            "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
+            "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
+            "\x1b[0m");
 }
