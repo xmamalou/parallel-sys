@@ -15,3 +15,6 @@ Building is easy and automated; just use one of the script files provided in the
 - EXERCISE 4: ./src/barriers.c
 - EXERCISE 5: ./src/better_mul.c
 - EXERCISE 6: ./src/game_of_life.c
+- EXERCISE 7: ./src/gaussian_elimination.c
+- EXERCISE 8: ./src/merge_sort.c
+- EXERCISE 9: NEVER COMING (where `NEVER` means for the forseeable future)
