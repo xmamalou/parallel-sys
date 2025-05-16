@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <linux/limits.h>
+#include <assert.h>
 
 #include "utility.h"
 #include "macros.h"
@@ -154,6 +155,7 @@ EXERCISE_IMPLM_DECL(shared_var_impl)
     // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
+        BENCHMARK_T bench_h = start_benchmark();
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
             uint32_t err = pthread_create(
@@ -164,8 +166,8 @@ EXERCISE_IMPLM_DECL(shared_var_impl)
                             : &increment_atomic_callback,
                     (void*)(options_p->loops));
         }
+
         // now we wait for all the threads to finish
-        BENCHMARK_T bench_h = start_benchmark();
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
             pthread_join(
@@ -173,6 +175,11 @@ EXERCISE_IMPLM_DECL(shared_var_impl)
                     NULL);
             threads[i] == NULL;
         }
+
+        assert(
+                incremented_g == options_p->loops*options_p->job_count
+                || incremented_atom_g == options_p->loops*options_p->job_count);
+
         RECORD(bench_h);
     }
 
@@ -188,7 +195,7 @@ EXERCISE_IMPLM_DECL(shared_var_impl)
 CALLBACK_DECL(increment_locks)
 {
     uint64_t loops = (uint64_t)args;
-    
+
     pthread_mutex_lock(&shared_var_mtx);
     for (uint64_t i = 0; i < loops; i++)
     {   

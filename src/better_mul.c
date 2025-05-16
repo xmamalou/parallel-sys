@@ -42,8 +42,11 @@ typedef struct Options {
     uint32_t job_count;
     Which    which_implm;
     char     matrix_dims[PATH_MAX];
-    uint64_t columns;
-    uint64_t rows;
+    uint32_t columns;
+    uint32_t rows;
+    double*  A;
+    double*  x;
+    double*  y;
     bool     is_upper_triangular;
     char     data_path[PATH_MAX];
     uint32_t tries;
@@ -72,6 +75,8 @@ EXERCISE_IMPLM_DECL(better_mul_opt);
 
 // --- FUNCTION DEFINITIONS --- //
 
+// This exercise was by far the most painful, and for all the wrong/irrelevant reasons.
+// From here on, I fully support a Rust-ful and C-less future.
 void better_mul(
         char** flags, uint32_t flag_count) 
 {
@@ -79,8 +84,11 @@ void better_mul(
         .job_count           = 1,
         .which_implm         = OPTIMIZED,
         .matrix_dims         = "",
-        .columns             = 2,
-        .rows                = 2,
+        .columns             = 0,
+        .rows                = 0,
+        .A                   = NULL,
+        .x                   = NULL,
+        .y                   = NULL,
         .is_upper_triangular = false,
         .data_path           = "",
         .tries               = 1,
@@ -110,19 +118,61 @@ void better_mul(
                 options.tries);
     }
 
+    uint64_t columns = 0, rows = 0;
     sscanf(
         options.matrix_dims,
         "%ux%u",
-        &options.columns,
-        &options.rows);
-    if (options.columns != options.rows && options.is_upper_triangular)
+        &columns,
+        &rows);
+    if (columns != rows && options.is_upper_triangular)
     {
         ERROR(
             "Hey! You requested an upper triangular matrix," 
             "but the dimensions you provided (%s) are not square! IGNORING ROWS!", 
             options.matrix_dims);
-        options.rows = options.columns;
+        rows = columns;
     }
+
+
+    // There was supposed to be a much more elegant way to create matrices, but
+    // because malloc is sadistic, I decided to do it the ugly way
+
+    uint32_t seed = 10000;
+    options.A = calloc(
+            columns*(options.is_upper_triangular ? columns : rows),
+            sizeof(double));
+    for (uint32_t i = 0; i < columns; i++)
+    {
+        for (uint32_t j = 0; j < (options.is_upper_triangular ? columns : rows); j++)
+        {
+            if (options.is_upper_triangular && j < i)
+            {
+                options.A[i + columns*j] = 0.0; // I wish C had lvalue references
+            } else {
+                options.A[i + columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
+            }
+            seed++;
+        }
+    }
+
+    seed = 10000;
+    options.x = calloc(
+            rows,
+            sizeof(double));
+    for (uint32_t i = 0; i < rows; i++)
+    {
+        options.x[i] = (double)rand_r(&seed)/(double)RAND_MAX;
+        seed++;
+    }
+
+    options.y = calloc(
+            columns,
+            sizeof(double));
+
+    // Can't be bothered to replace the local variables with the struct ones,
+    // I already had to rewrite this exercise 4 times
+    options.columns = columns;
+    options.rows    = rows;
 
     double time_of_execution = 0;
 
@@ -141,6 +191,10 @@ void better_mul(
         implm_string[options.which_implm],
         options.job_count,
         time_of_execution);
+
+    free(options.A);
+    free(options.x);
+    free(options.y);
 
     return;
 }
@@ -162,36 +216,6 @@ FLAG_READER(options_p)
 
 EXERCISE_IMPLM_DECL(better_mul_unopt)
 {
-    uint32_t seed = 10000;
-    double* A = calloc(
-            options_p->columns*(options_p->is_upper_triangular ? options_p->columns : options_p->rows),
-            sizeof(double));
-    for (uint32_t i = 0; i < options_p->columns; i++)
-    {
-        for (uint32_t j = 0; j < (options_p->is_upper_triangular ? options_p->columns : options_p->rows); j++)
-        {
-            if (options_p->is_upper_triangular && j < i)
-            {
-                A[i + options_p->columns*j] = 0.0;
-            } else {
-                A[i + options_p->columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
-            }
-            seed++;
-        }
-    }
-
-    double* x = calloc(
-            options_p->rows,
-            sizeof(double));
-    for (uint32_t i = 0; i < options_p->rows; i++)
-    {
-        x[i] = (double)rand_r(&seed)/(double)RAND_MAX;
-    }
-
-    double* y = calloc(
-            options_p->columns,
-            sizeof(double));
-    
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
         uint32_t i, j, temp;
@@ -203,52 +227,16 @@ EXERCISE_IMPLM_DECL(better_mul_unopt)
                 temp = 0.0;
                 for (j = 0; j < options_p->rows; j++) 
                 {
-                    temp += A[i + options_p->columns*j]*x[j];
+                    temp += options_p->A[i + options_p->columns*j]*options_p->x[j];
                 }
-                y[i] = temp;
+                options_p->y[i] = temp;
         }
         *time_of_execution_p += stop_benchmark(benchmark);
     }
-
-    free(A);
-    free(x);
-    free(y);
 }
 
 EXERCISE_IMPLM_DECL(better_mul_opt)
 {
-    uint32_t seed = 10000;
-    double* A = calloc(
-            options_p->columns*(options_p->is_upper_triangular ? options_p->columns : options_p->rows),
-            sizeof(double));
-    for (uint32_t i = 0; i < options_p->columns; i++)
-    {
-        for (uint32_t j = 0; j < (options_p->is_upper_triangular ? options_p->columns : options_p->rows); j++)
-        {
-            if (options_p->is_upper_triangular && j < i)
-            {
-                A[i + options_p->columns*j] = 0.0;
-            } else {
-                A[i + options_p->columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
-            }
-            seed++;
-        }
-    }
-
-    seed = 10000;
-    double* x = calloc(
-            options_p->rows,
-            sizeof(double));
-    for (uint32_t i = 0; i < options_p->rows; i++)
-    {
-        x[i] = (double)rand_r(&seed)/(double)RAND_MAX;
-        seed++;
-    }
-
-    double* y = calloc(
-            options_p->columns,
-            sizeof(double));
-    
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
         uint32_t i, j, temp;
@@ -260,15 +248,11 @@ EXERCISE_IMPLM_DECL(better_mul_opt)
                 temp = 0.0;
                 for (j = i; j < options_p->columns - i; j++) 
                 {
-                    temp += A[i + options_p->columns*j]*x[j];
+                    temp += options_p->A[i + options_p->columns*j]*options_p->A[j];
                 }
-                y[i] = temp;
+                options_p->A[i] = temp;
         }
         RECORD(benchmark);
     }
-
-    free(A);
-    free(x);
-    free(y);
 }
 

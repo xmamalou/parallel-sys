@@ -1,5 +1,27 @@
+/*
+    Parallel Systems Exercise Batch 1 -- Solutions to Batch 1 of Exercises for the Parallel
+    Systems Course of the "Computer Engineering" Masters Programme of NKUA
+    Copyright (C) 2025 Christoforos-Marios Mamaloukas
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #ifndef _MACROS_H_
 #define _MACROS_H_
+
+// I don't care if macros make the code a mess, this is the only 
+// way I won't become insane while doing this project
 
 #define EXERCISE_DECL(exercise_name) \
     void exercise_name(\
@@ -8,7 +30,9 @@
 #define EXERCISE_IMPLM_DECL(implementation_name) \
     static void implementation_name(const Options* options_p, double* time_of_execution_p)
 
+/// This exists because C types suck
 #define EXERCISE_IMPLM_T typedef void (*Implementation)(const Options*, double*); Implementation 
+/// This also exists because C types suck
 #define CALLBACK_T typedef void* (*Callback)(void*); Callback
 
 #define CALLBACK_DECL(implementation_name) \
@@ -28,6 +52,8 @@
     {\
         for (uint32_t i = 0; i < flag_count; i++)
 
+// If this was a good language (Zig), I would have needed only one of these
+    
 #define SET_FLAG(string, option, value_if) \
     if (strcmp(flags[i], string) == 0) \
     { \

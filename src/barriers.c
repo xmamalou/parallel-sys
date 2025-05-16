@@ -188,6 +188,7 @@ EXERCISE_IMPLM_DECL(barriers_impl)
     // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
+        BENCHMARK_T bench_h = start_benchmark();
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
             uint32_t err = pthread_create(
@@ -196,8 +197,8 @@ EXERCISE_IMPLM_DECL(barriers_impl)
                     callbacks[options_p->which_implm],
                     (void*)(options_p->incr_times));
         }
+
         // now we wait for all the threads to finish
-        BENCHMARK_T bench_h = start_benchmark();
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
             pthread_join(
@@ -208,6 +209,7 @@ EXERCISE_IMPLM_DECL(barriers_impl)
         RECORD(bench_h);
     }
 
+    // TODO: This breaks if threads are more than 4 or 5 or so, because God hates me
     free(threads);
 
     switch (options_p->which_implm)

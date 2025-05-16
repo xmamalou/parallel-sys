@@ -206,6 +206,7 @@ EXERCISE_IMPLM_DECL(pi_calc_parallel)
     // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
+        BENCHMARK_T bench_h = start_benchmark();
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
             uint32_t err = pthread_create(
@@ -214,8 +215,8 @@ EXERCISE_IMPLM_DECL(pi_calc_parallel)
                     &succ_throws_callback,
                     (void*)(throws_per_job));
         }
+
         // now we wait for all the threads to finish
-        BENCHMARK_T bench_h = start_benchmark();
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
             pthread_join(
