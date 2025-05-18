@@ -141,6 +141,9 @@
 #define ERROR(string, ...) \
     fprintf(stderr, "\x1b[31m"); \
     fprintf(stderr, string, __VA_ARGS__); \
-    fprintf(stderr, "\x1b[0m\n"); \
+    fprintf(stderr, "\x1b[0m\n"); 
+
+#define FLIP_INDEX(i, size) \
+    (size - 1 - i)
 
 #endif /* _MACROS_H_ */
