@@ -80,6 +80,10 @@ case $jmp_to in
         $executable -e 1 -fs -fn=10000 -ff=data/exercise1.txt $options
         $executable -e 1 -fp -fn=10000 -ff=data/exercise1.txt $options
         $executable -e 1 -fomp -fn=10000 -ff=data/exercise1.txt $options
+    # 100000 throws
+        $executable -e 1 -fs -fn=100000 -ff=data/exercise1.txt $options
+        $executable -e 1 -fp -fn=100000 -ff=data/exercise1.txt $options
+        $executable -e 1 -fomp -fn=100000 -ff=data/exercise1.txt $options
     # 1000000 throws
         $executable -e 1 -fs -fn=1000000 -ff=data/exercise1.txt $options
         $executable -e 1 -fp -fn=1000000 -ff=data/exercise1.txt $options
