@@ -95,7 +95,7 @@ void gaussian_elimination(
         .job_count           = 1,
         .which_implm         = SERIAL,
         .algo_type           = PER_ROW,
-        .matrix_dims         = "",
+        .matrix_dims         = 0,
         .A                   = NULL,
         .x                   = NULL,
         .b                   = NULL,
@@ -163,6 +163,10 @@ void gaussian_elimination(
     options.x = calloc(
             options.matrix_dims,
             sizeof(double));
+    memcpy(
+            options.x,
+            options.b,
+            options.matrix_dims*sizeof(double));
 
     double time_of_execution = 0;
 
@@ -179,12 +183,13 @@ void gaussian_elimination(
     CALCULATE_TIME(time_of_execution);
 
     LOG(
-        "[EXERCISE 7]\ntype = %s\nalgo = %s\ndims = %dx%d\njobs = %d\ntime = %f\n",
-        implm_string[options.which_implm],
-        algo_type[options.algo_type],
-        options.matrix_dims,
-        options.job_count,
-        time_of_execution);
+            "[EXERCISE 7]\ntype = %s\nalgo = %s\ndims = %dx%d\njobs = %u\ntime = %f\n",
+            implm_string[options.which_implm],
+            algo_type[options.algo_type],
+            options.matrix_dims,
+            options.matrix_dims,
+            options.job_count,
+            time_of_execution);
 
     free(options.A);
     free(options.x);
@@ -214,49 +219,96 @@ FLAG_READER(options_p)
 
 EXERCISE_IMPLM_DECL(gaussian_serial_pc)
 {
-    
+    for (uint64_t k = 0; k < options_p->tries; k++)
+    {
+        BENCHMARK_T benchmark = start_benchmark();
+        for (uint64_t i = 0; i < options_p->matrix_dims; i++)
+        {
+            options_p->x[i] = options_p->b[i];
+        }
+
+        for (int64_t i = options_p->matrix_dims - 1; i >= 0; i--)
+        {
+            options_p->x[i] /= options_p->A[i + options_p->matrix_dims*i];
+            for (int64_t j = 0; j < i; j++)
+            {
+                options_p->x[j] -= options_p->A[j + options_p->matrix_dims*i]*options_p->x[i];
+            }
+        }
+        RECORD(benchmark);
+    }
 }
 
 EXERCISE_IMPLM_DECL(gaussian_serial_pr)
 {
-    for (
-            uint64_t i = options_p->matrix_dims - 1; 
-            i >= 0; 
-            i--) 
+    for (uint64_t k = 0; k < options_p->tries; k++)
     {
-        options_p->x[i] = options_p->b[i];
-        for (uint64_t j = i+1; j < options_p->matrix_dims; j++) 
+        BENCHMARK_T benchmark = start_benchmark();
+        for (
+                int64_t i = options_p->matrix_dims - 1; 
+                i >= 0; 
+                i--) 
         {
-            options_p->x[i] -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[j];
+            options_p->x[i] = options_p->b[i];
+            for (int64_t j = i+1; j < options_p->matrix_dims; j++) 
+            {
+                options_p->x[i] -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[j];
+            }
+            options_p->x[i] /= options_p->A[i + options_p->matrix_dims*i];
         }
-        options_p->x[i] /= options_p->A[i + options_p->matrix_dims*i];
+        RECORD(benchmark);
     }
 }
 
 EXERCISE_IMPLM_DECL(gaussian_parallel_pc)
 {
-    for (uint64_t i = 0; i < options_p->matrix_dims; i++)
+    for (uint64_t k = 0; k < options_p->tries; k++)
     {
-        options_p->x[i] = options_p->b[i];
-    }
-
-    for (uint64_t i = options_p->matrix_dims - 1; i >= 0; i--)
-    {
-        options_p->x[i] /= options_p->A[i + options_p->matrix_dims*i];
-        for (uint64_t j = 0; j < i; j++)
+        BENCHMARK_T benchmark = start_benchmark();
+        #pragma omp parallel for
+        for (uint64_t i = 0; i < options_p->matrix_dims; i++)
         {
-            options_p->x[j] -= options_p->A[j + options_p->matrix_dims*i]*options_p->x[i];
+            options_p->x[i] = options_p->b[i];
         }
+
+        #pragma omp parallel for
+        for (uint64_t i = 0; i < options_p->matrix_dims; i++)
+        {
+            options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
+                    /= options_p->A[FLIP_INDEX(i, options_p->matrix_dims) + options_p->matrix_dims* 
+                            FLIP_INDEX(i, options_p->matrix_dims)];
+            for (uint64_t j = 0; j < i; j++)
+            {
+                options_p->x[j] -= options_p->A[j 
+                        + options_p->matrix_dims*FLIP_INDEX(i, options_p->matrix_dims)]
+                        *options_p->x[FLIP_INDEX(i, options_p->matrix_dims)];
+            }
+        }
+        RECORD(benchmark);
     }
 }
 
 EXERCISE_IMPLM_DECL(gaussian_parallel_pr)
 {
-    
-}
-
-EXERCISE_IMPLM_DECL(gaussian_parallel_pr)
-{
-    
+    for (uint64_t k = 0; k < options_p->tries; k++)
+    {
+        BENCHMARK_T benchmark = start_benchmark();
+        #pragma omp parallel for
+        for (uint64_t i = 0; i < options_p->matrix_dims; i++)
+        {
+            options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
+                    = options_p->b[FLIP_INDEX(i, options_p->matrix_dims)];
+            for (uint64_t j = i+1; j < options_p->matrix_dims; j++)
+            {
+                options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
+                        -= options_p->A[FLIP_INDEX(i, options_p->matrix_dims) 
+                                + options_p->matrix_dims*j]
+                                *options_p->x[j];
+            }
+            options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
+                    /= options_p->A[FLIP_INDEX(i, options_p->matrix_dims) + options_p->matrix_dims*FLIP_INDEX(i, options_p->matrix_dims)];
+        }
+        RECORD(benchmark);
+    }
 }
 

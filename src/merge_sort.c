@@ -61,10 +61,8 @@ static const uint64_t nsec_to_msec_factor = 1000000;
 
 FLAG_READER_DECL();
 
-EXERCISE_IMPLM_DECL(merge_sort_impl);
-
-CALLBACK_DECL(barriers_native);
-CALLBACK_DECL(barriers_custom_busywait);
+EXERCISE_IMPLM_DECL(merge_sort_serial);
+EXERCISE_IMPLM_DECL(merge_sort_parallel);
 
 // --- FUNCTION DEFINITIONS --- //
 
