@@ -18,6 +18,8 @@ set(SRCFILES
         src/barriers.c
         src/better_mul.c
         src/game_of_life.c
+        src/gaussian_elimination.c
+        src/merge_sort.c
         src/utility.c)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
