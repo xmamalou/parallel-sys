@@ -219,17 +219,25 @@ EXERCISE_IMPLM_DECL(better_mul_unopt)
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
         uint32_t i, j, temp;
+        // These are necessary because why make our lives easier
+        // when we can make them harder?
+        double* A = options_p->A;
+        double* x = options_p->x;
+        double* y = options_p->y;
+        uint32_t columns = options_p->columns;
+        uint32_t rows = options_p->rows;
         BENCHMARK_T benchmark = start_benchmark();
         #pragma omp parallel for num_threads(options_p->job_count)  \
-                default(none) private(i, j, temp)  shared(A, x, y, options_p)
-        for (i = 0; i < options_p->columns; i++) 
+                default(none) private(i, j, temp)  shared( \
+                        A, x, y, columns, rows, time_of_execution_p)
+        for (i = 0; i < columns; i++) 
         {
                 temp = 0.0;
-                for (j = 0; j < options_p->rows; j++) 
+                for (j = 0; j < rows; j++) 
                 {
-                    temp += options_p->A[i + options_p->columns*j]*options_p->x[j];
+                    temp += A[i + columns*j]*x[j];
                 }
-                options_p->y[i] = temp;
+                y[i] = temp;
         }
         *time_of_execution_p += stop_benchmark(benchmark);
     }
@@ -240,17 +248,23 @@ EXERCISE_IMPLM_DECL(better_mul_opt)
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
         uint32_t i, j, temp;
+        double* A = options_p->A;
+        double* x = options_p->x;
+        double* y = options_p->y;
+        uint32_t columns = options_p->columns;
+        uint32_t rows = options_p->rows;
         BENCHMARK_T benchmark = start_benchmark();
         #pragma omp parallel for num_threads(options_p->job_count)  \
-                default(none) private(i, j, temp)  shared(A, x, y, options_p)
-        for (i = 0; i < options_p->columns; i++) 
+                default(none) private(i, j, temp)  shared( \
+                        A, x, y, columns, rows, time_of_execution_p)
+        for (i = 0; i < columns; i++) 
         {
                 temp = 0.0;
-                for (j = i; j < options_p->columns - i; j++) 
+                for (j = i; j < columns - i; j++) 
                 {
-                    temp += options_p->A[i + options_p->columns*j]*options_p->A[j];
+                    temp += A[i + columns*j]*A[j];
                 }
-                options_p->A[i] = temp;
+                A[i] = temp;
         }
         RECORD(benchmark);
     }
