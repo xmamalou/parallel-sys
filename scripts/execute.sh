@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 cd $(pwd)
 
@@ -75,10 +75,38 @@ case $jmp_to in
     echo -e "\e[33mExecuting Exercise 1 on $job_num threads...\e[0m"
 
     if [ "$mute" = false ]; then
+    # Exercise 1
+    # 10000 throws
+        $executable -e 1 -fs -fn=10000 -ff=data/exercise1.txt $options
+        $executable -e 1 -fp -fn=10000 -ff=data/exercise1.txt $options
+        $executable -e 1 -fomp -fn=10000 -ff=data/exercise1.txt $options
+    # 1000000 throws
+        $executable -e 1 -fs -fn=1000000 -ff=data/exercise1.txt $options
+        $executable -e 1 -fp -fn=1000000 -ff=data/exercise1.txt $options
+        $executable -e 1 -fomp -fn=1000000 -ff=data/exercise1.txt $options
+    # 10000000 throws
+        $executable -e 1 -fs -fn=10000000 -ff=data/exercise1.txt $options
+        $executable -e 1 -fp -fn=10000000 -ff=data/exercise1.txt $options
+        $executable -e 1 -fomp -fn=10000000 -ff=data/exercise1.txt $options
+    # 100000000 throws
         $executable -e 1 -fs -fn=1000000000 -ff=data/exercise1.txt $options
         $executable -e 1 -fp -fn=1000000000 -ff=data/exercise1.txt $options
         $executable -e 1 -fomp -fn=1000000000 -ff=data/exercise1.txt $options
     else 
+    # Exercise 1
+    # 10000 throws
+        $executable -e 1 -fs -fn=10000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+        $executable -e 1 -fp -fn=10000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+        $executable -e 1 -fomp -fn=10000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+    # 1000000 throws
+        $executable -e 1 -fs -fn=1000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+        $executable -e 1 -fp -fn=1000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+        $executable -e 1 -fomp -fn=1000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+    # 10000000 throws
+        $executable -e 1 -fs -fn=10000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+        $executable -e 1 -fp -fn=10000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+        $executable -e 1 -fomp -fn=10000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
+    # 100000000 throws
         $executable -e 1 -fs -fn=1000000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
         $executable -e 1 -fp -fn=1000000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
         $executable -e 1 -fomp -fn=1000000000 -ff=data/exercise1.txt $options > /dev/null 2>&1
