@@ -203,7 +203,7 @@ case $jmp_to in
         $executable -e 3 -fl -fi=100000000 -ff=data/exercise3.txt $options > /dev/null 2>&1
         $executable -e 3 -fa -fi=100000000 -ff=data/exercise3.txt $options > /dev/null 2>&1
     fi
-    ;;
+    ;&
 4)
     echo -e "\e[33mExecuting Exercise 4 on $job_num threads...\e[0m"
     # 10000 loops, 1 thread
@@ -306,6 +306,7 @@ case $jmp_to in
         $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
         #$executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
     fi
+    ;&
 5) 
     echo -e "\e[33mExecuting Exercise 5 on $job_num threads...\e[0m"
     # 1000x1000 matrix
@@ -340,6 +341,7 @@ case $jmp_to in
         $executable -e 5 -fO0 -fm=1000000x1000000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
         $executable -e 5 -fO1 -fi=1000000x1000000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
     fi
+    ;&
 6)
     echo -e "\e[33mExecuting Exercise 6 on $job_num threads...\e[0m"
     # 64x64 matrix, 1000 generations
@@ -374,6 +376,7 @@ case $jmp_to in
         $executable -e 6 -fs -fm=4096x4096 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
         $executable -e 6 -fp -fi=4096x4096 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
     fi
+    ;&
 7) 
     echo -e "\e[33mExecuting Exercise 7 on $job_num threads...\e[0m"
     # 64x64 matrix
@@ -424,7 +427,7 @@ case $jmp_to in
         $executable -e 7 -fp -fpc -fm=4096 -ff=data/exercise7.txt $options > /dev/null 2>&1
         $executable -e 7 -fp -fpr -fm=4096 -ff=data/exercise7.txt $options > /dev/null 2>&1
     fi
-    ;;
+    ;&
 8) 
     echo -e "\e[33mExecuting Exercise 8 on $job_num threads...\e[0m"
     # 10000 array
@@ -467,6 +470,7 @@ case $jmp_to in
         $executable -e 8 -fs -fn=100000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
         $executable -e 8 -fp -fn=100000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
     fi
+    ;;
 *)
     echo -e "\e[31mERROR! Invalid exercise number!\e[0m"
     exit 1
