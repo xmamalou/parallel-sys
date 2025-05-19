@@ -251,7 +251,7 @@ CALLBACK_DECL(barriers_custom)
     return NULL;
 }
 
-// TODO: Doesn't work
+// This was magically fixed because ????????
 CALLBACK_DECL(barriers_custom_busywait)
 {
     uint64_t loop_times = (uint64_t)args;
