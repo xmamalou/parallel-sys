@@ -138,7 +138,9 @@ void game_of_life(
                 options.matrix_dims,
                 options.data_path,
                 options.tries,
-                options.animate ? "enabled" : "disabled");
+                options.animate && options.which_algo == SERIAL 
+                        ? "enabled" 
+                        : "disabled");
     }
 
     sscanf(
@@ -158,14 +160,23 @@ void game_of_life(
             sizeof(bool));
             
     // Fill the first matrix with random values
+    FILE* urandom = fopen("/dev/urandom", "r");
     for (uint32_t i = 0; i < options.columns; i++)
     {
         for (uint32_t j = 0; j < options.rows; j++)
         {
-                options.A[0][i + options.columns*j] = rand_r(&seed) % 2 == 0;
-                options.A[1][i + options.columns*j] = rand_r(&seed) % 2 == 0;
+            uint32_t rand_num = 0;
+            fread(&rand_num, sizeof(bool), 1, urandom);
+            options.A[0][i + options.columns*j] = rand_num % 2 == 0
+                    ? true
+                    : false;
+            fread(&rand_num, sizeof(bool), 1, urandom);
+            options.A[1][i + options.columns*j] = rand_num % 2 == 0
+                    ? true
+                    : false;
         }
     }
+    fclose(urandom);
 
     double time_of_execution = 0;
     EXERCISE_IMPLM_T functions[] = {

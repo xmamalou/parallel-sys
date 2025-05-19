@@ -69,13 +69,21 @@ const ExerciseFunc exercise_funcptrs[] = {
     NULL, // Exercise 9 is not implemented and probably never will be because I can't stand writing C anymore
 };
 
+#define SUCCESS 0
+#define BAD_ARG_ERROR 1
+#define BAD_EXERCISE_ERROR 2
+#define NO_ARGS_ERROR 3
+
 // --- FUNCTIONS --- //
 
 /// @brief Reads arguments from the command line to parse them into actions
 /// @param argc command line arguments
 /// @param argv command line argument count
 /// @param exercise_options structure to be modified depending on command line arguments
-void read_arguments(
+/// @return SUCCESS if everything went well, BAD_ARG_ERROR if an invalid argument was passed,
+///         BAD_EXERCISE_ERROR if an invalid exercise was passed,
+///         NO_ARGS_ERROR if no arguments were passed.
+uint32_t read_arguments(
         int argc, char* argv[],
         Options* exercise_options);
 
@@ -101,11 +109,12 @@ int main(
         .flag_count = 0
     };
 
+    uint32_t error = NO_ARGS_ERROR;
     if(argc > 1) 
     {
-        read_arguments(
-                argc, argv,
-                &exercise_options);
+        error = read_arguments(
+                        argc, argv,
+                        &exercise_options);
     }
 
     // Help just prints a message and quits; program does not proceed.
@@ -118,21 +127,21 @@ int main(
                 "\t* -l, --list: List exercises and supported flags\n"
                 "\t* -e <number>, --exercise <number>: Executes Exercise <number>. Must be at least 1 and at most 9\n\x1b[0m",
                     basename(argv[0]));
-        return 0;
+        return NO_ARGS_ERROR;
     } else if (exercise_options.which == LIST) {
         print_list();
-        return 0;
+        return SUCCESS;
     }
 
     exercise_funcptrs[exercise_options.which - 1](
             exercise_options.flags, exercise_options.flag_count);
 
-    return 0;
+    return SUCCESS;
 }
 
 //
 
-void read_arguments(
+uint32_t read_arguments(
         int argc, char* argv[],
         Options* exercise_options) 
 {
@@ -144,7 +153,7 @@ void read_arguments(
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) 
         {
             exercise_options->which = HELP;
-            return;
+            return SUCCESS;
         }
 
         if (strcmp(argv[i], "--exercise") == 0 || strcmp(argv[i], "-e") == 0) 
@@ -161,21 +170,21 @@ void read_arguments(
                 continue;
             } else {
                 fprintf(stderr, "\x1b[31mERROR! Expected exercise number but was given no or invalid parameter!!\x1b[0m\n");
-                return; // Invalid parameter, we cannot continue
+                return BAD_EXERCISE_ERROR; // Invalid parameter, we cannot continue
             }
         }
 
         if (strcmp(argv[i], "--list") == 0 || strcmp(argv[i], "-l") == 0)
         {
             exercise_options->which = LIST;
-            return;
+            return SUCCESS;
         }
         
         // If any of the above checks fails, this means an invalid parameter was passed.
         // Quit and show help message 
         fprintf(stderr, "\x1b[31mERROR! Argument %s is unknown!\n", argv[i]);
         exercise_options->which = HELP;
-        break; 
+        return BAD_ARG_ERROR; 
     }
 }
 
@@ -216,6 +225,7 @@ static void print_list()
             "\t\t* l, locks: Run the version using locks (default)\n"
             "\t\t* a, atomic: Run the version using atomics\n"
             "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
+            "\t\t* i=<number>, incr=<number>: How many loops each thread should run\n"
             "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
             "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
             "\t(3) False sharing\n"
@@ -252,6 +262,7 @@ static void print_list()
             "\t\t* j=<number>, jobs=<number>: Number of threads for the parallel version of an algorithm\n"
             "\t\t* g=<number>, generations=<number>: The amount of generations to run\n"
             "\t\t* m=<number>x<number>, matrix=<number>x<number>: The dimensions of the matrix to generate\n"
+            "\t\t* a, animate: Show the animation of the game (this flag has no effect and animation is disabled if running in parallel)\n"
             "\t\t* f=<path>, file=<path>: Path to the file to save the data in; leave empty to use stdout\n"
             "\t\t* t=<number>, tries=<number>: Number of tries for the experiment. Logged data is the average execution time\n"
             "\t(7) Gaussian elimination\n"

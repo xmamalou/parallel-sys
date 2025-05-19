@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <linux/limits.h>
 #include <omp.h>
+#include <assert.h>
 
 #include "utility.h"
 #include "macros.h"
@@ -43,7 +44,7 @@ typedef struct Options {
     uint32_t  tries;
     uint32_t  job_count;
     uint64_t  element_count;
-    uint64_t* data;
+    uint16_t* data;
     char      data_path[PATH_MAX];
 } Options;
 
@@ -100,6 +101,18 @@ void merge_sort(
                 options.tries);
     }
 
+    options.data = calloc(
+            options.element_count,
+            sizeof(uint16_t));
+    FILE* urandom = fopen("/dev/urandom", "r");
+    for (uint32_t i = 0; i < options.element_count; i++)
+    {
+        uint16_t rand_num = 0;
+        fread(&rand_num, sizeof(uint16_t), 1, urandom);
+        options.data[i] = (uint16_t)rand_num;
+    }
+    fclose(urandom);
+
     double time_of_execution = 0;
     EXERCISE_IMPLM_T functions[] = {
         &merge_sort_serial,
@@ -117,6 +130,8 @@ void merge_sort(
         options.job_count,
         options.element_count,
         time_of_execution);
+
+    free(options.data);
 
     return;
 }
@@ -141,7 +156,48 @@ FLAG_READER(options_p)
 
 EXERCISE_IMPLM_DECL(merge_sort_serial)
 {
-    
+    uint32_t middle = options_p->element_count/2;
+    uint16_t* left = calloc(middle, sizeof(uint16_t));
+    uint16_t* right = calloc(middle, sizeof(uint16_t));
+
+    for (uint64_t k = 0; k < options_p->tries; k++)
+    {
+        BENCHMARK_T benchmark = start_benchmark();
+
+        for (uint32_t i = 0; i < middle - 1; i++)
+        { 
+            left[i] = options_p->data[i];
+        }
+        for (uint32_t j = 0; j < middle - 1; j++)
+        {
+            right[j] = options_p->data[j + middle]; 
+        }
+
+        uint64_t i = 0, j = 0;
+        while (i < middle - 1 && j < middle - 1)
+        {
+            for (uint64_t k = 0; k < options_p->element_count; k++)
+            {
+                if (left[i] <= right[j])
+                {
+                    options_p->data[k] = left[i];
+                    i++;
+                } else {
+                    options_p->data[k] = right[j];
+                    j++;
+                }
+            }
+        }
+        RECORD(benchmark);
+
+        for (uint64_t i = 0; i < options_p->element_count - 1; i++)
+        {
+            assert(options_p->data[i] <= options_p->data[i + 1]);
+        }
+    }
+
+    free(left);
+    free(right);
 } 
 
 EXERCISE_IMPLM_DECL(merge_sort_parallel)

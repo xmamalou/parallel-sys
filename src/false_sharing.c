@@ -197,8 +197,8 @@ EXERCISE_IMPLM_DECL(false_sharing_impl)
         RECORD(bench_h);
     }
 
-    // TODO: This breaks if the threads are more than 3
-    free(threads);
+    // TODO: This breaks if the threads are more than 3. Currenty, we will just allow the dangling pointer
+    //free(threads);
 
     if (options_p->which_method == MUTEX)
     {

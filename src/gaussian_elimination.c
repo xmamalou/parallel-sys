@@ -132,7 +132,7 @@ void gaussian_elimination(
     // There was supposed to be a much more elegant way to create matrices, but
     // because malloc is sadistic, I decided to do it the ugly way
 
-    uint32_t seed = 10000;
+    FILE* urandom = fopen("/dev/urandom", "r");
     options.A = calloc(
             options.matrix_dims*options.matrix_dims,
             sizeof(double));
@@ -144,21 +144,23 @@ void gaussian_elimination(
             {
                 options.A[i + options.matrix_dims*j] = 0.0; // I wish C had lvalue references
             } else {
-                options.A[i + options.matrix_dims*j] = (double)rand_r(&seed)/(double)RAND_MAX;
+                uint32_t rand_num;
+                fread(&rand_num, sizeof(uint32_t), 1, urandom);
+                options.A[i + options.matrix_dims*j] = (double)rand_num/(double)RAND_MAX;
             }
-            seed++;
         }
     }
 
-    seed = 10000;
     options.b = calloc(
             options.matrix_dims,
             sizeof(double));
     for (uint32_t i = 0; i < options.matrix_dims; i++)
     {
-        options.b[i] = (double)rand_r(&seed)/(double)RAND_MAX;
-        seed++;
+        uint32_t rand_num;
+        fread(&rand_num, sizeof(uint32_t), 1, urandom);
+        options.b[i] = (double)rand_num/(double)RAND_MAX;
     }
+    fclose(urandom);
 
     options.x = calloc(
             options.matrix_dims,
@@ -265,13 +267,13 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pc)
     for (uint64_t k = 0; k < options_p->tries; k++)
     {
         BENCHMARK_T benchmark = start_benchmark();
-        #pragma omp parallel for
+        #pragma omp parallel for num_threads(options_p->job_count)
         for (uint64_t i = 0; i < options_p->matrix_dims; i++)
         {
             options_p->x[i] = options_p->b[i];
         }
 
-        #pragma omp parallel for
+        #pragma omp parallel for num_threads(options_p->job_count)
         for (uint64_t i = 0; i < options_p->matrix_dims; i++)
         {
             options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
@@ -293,7 +295,7 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pr)
     for (uint64_t k = 0; k < options_p->tries; k++)
     {
         BENCHMARK_T benchmark = start_benchmark();
-        #pragma omp parallel for
+        #pragma omp parallel for num_threads(options_p->job_count)
         for (uint64_t i = 0; i < options_p->matrix_dims; i++)
         {
             options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 

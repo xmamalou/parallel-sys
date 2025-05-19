@@ -164,7 +164,7 @@ FLAG_READER(options_p)
 EXERCISE_IMPLM_DECL(pi_calc_serial)
 {
     uint64_t avg_succ_throws = 0; // throws inside the circle
-    uint32_t seed        = 10000;
+    uint32_t seed            = 10000;
 
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
@@ -203,7 +203,6 @@ EXERCISE_IMPLM_DECL(pi_calc_parallel)
             &throws_mtx,
             NULL);
     
-    // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
         BENCHMARK_T bench_h = start_benchmark();
@@ -226,6 +225,7 @@ EXERCISE_IMPLM_DECL(pi_calc_parallel)
         }
         RECORD(bench_h);
     }
+    pthread_mutex_destroy(&throws_mtx);
 
     free(threads);
     
@@ -273,6 +273,7 @@ CALLBACK_DECL(succ_throws)
 
     uint64_t succ_throws = 0;
     uint32_t seed        = 10000;
+    
     for (uint64_t i = 0; i < throw_count; i++)
     {
         double x = (double)rand_r(&seed)/(double)RAND_MAX, 
