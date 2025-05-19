@@ -119,7 +119,39 @@ case $jmp_to in
 2)
     # Exercise 2
     echo -e "\e[33mExecuting Exercise 2 on $job_num threads...\e[0m"
-
+    # 10000 throws
+    if [ "$mute" = false ]; then
+        $executable -e 2 -fl -fi=10000 -ff=data/exercise2.txt $options
+        $executable -e 2 -fa -fi=10000 -ff=data/exercise2.txt $options
+    else 
+        $executable -e 2 -fl -fi=10000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+        $executable -e 2 -fa -fi=10000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+    fi
+    # 100000 throws
+    if [ "$mute" = false ]; then
+        $executable -e 2 -fl -fi=100000 -ff=data/exercise2.txt $options
+        $executable -e 2 -fa -fi=100000 -ff=data/exercise2.txt $options
+    else 
+        $executable -e 2 -fl -fi=100000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+        $executable -e 2 -fa -fi=100000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+    fi
+    # 1000000 throws
+    if [ "$mute" = false ]; then
+        $executable -e 2 -fl -fi=1000000 -ff=data/exercise2.txt $options
+        $executable -e 2 -fa -fi=1000000 -ff=data/exercise2.txt $options
+    else 
+        $executable -e 2 -fl -fi=1000000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+        $executable -e 2 -fa -fi=1000000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+    fi
+    # 10000000 throws
+    if [ "$mute" = false ]; then
+        $executable -e 2 -fl -fi=10000000 -ff=data/exercise2.txt $options
+        $executable -e 2 -fa -fi=10000000 -ff=data/exercise2.txt $options
+    else 
+        $executable -e 2 -fl -fi=10000000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+        $executable -e 2 -fa -fi=10000000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+    fi
+    # 100000000 throws
     if [ "$mute" = false ]; then
         $executable -e 2 -fl -fi=100000000 -ff=data/exercise2.txt $options
         $executable -e 2 -fa -fi=100000000 -ff=data/exercise2.txt $options
@@ -130,15 +162,311 @@ case $jmp_to in
     ;&
 3)
     # Exercise 3
-    echo -e "\e[33mExecuting Exercise 3 on $job_num threads...\e[0m"
+    echo -e "\e[33mExecuting Exercise 2 on $job_num threads...\e[0m"
+    # 10000 throws
     if [ "$mute" = false ]; then
-        $executable -e 3 -fl -fi=100000000 -ff=data/exercise2.txt $options
-        $executable -e 3 -fa -fi=100000000 -ff=data/exercise2.txt $options
+        $executable -e 3 -fl -fi=10000 -ff=data/exercise3.txt $options
+        $executable -e 3 -fa -fi=10000 -ff=data/exercise3.txt $options
     else 
-        $executable -e 3 -fl -fi=100000000 -ff=data/exercise2.txt $options > /dev/null 2>&1
-        $executable -e 3 -fa -fi=100000000 -ff=data/exercise2.txt $options > /dev/null 2>&1
+        $executable -e 3 -fl -fi=10000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+        $executable -e 3 -fa -fi=10000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+    fi
+    # 100000 throws
+    if [ "$mute" = false ]; then
+        $executable -e 3 -fl -fi=100000 -ff=data/exercise3.txt $options
+        $executable -e 3 -fa -fi=100000 -ff=data/exercise3.txt $options
+    else 
+        $executable -e 3 -fl -fi=100000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+        $executable -e 3 -fa -fi=100000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+    fi
+    # 1000000 throws
+    if [ "$mute" = false ]; then
+        $executable -e 3 -fl -fi=1000000 -ff=data/exercise3.txt $options
+        $executable -e 3 -fa -fi=1000000 -ff=data/exercise3.txt $options
+    else 
+        $executable -e 3 -fl -fi=1000000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+        $executable -e 3 -fa -fi=1000000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+    fi
+    # 10000000 throws
+    if [ "$mute" = false ]; then
+        $executable -e 3 -fl -fi=10000000 -ff=data/exercise3.txt $options
+        $executable -e 3 -fa -fi=10000000 -ff=data/exercise3.txt $options
+    else 
+        $executable -e 3 -fl -fi=10000000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+        $executable -e 3 -fa -fi=10000000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+    fi
+    # 100000000 throws
+    if [ "$mute" = false ]; then
+        $executable -e 3 -fl -fi=100000000 -ff=data/exercise3.txt $options
+        $executable -e 3 -fa -fi=100000000 -ff=data/exercise3.txt $options
+    else 
+        $executable -e 3 -fl -fi=100000000 -ff=data/exercise3.txt $options > /dev/null 2>&1
+        $executable -e 3 -fa -fi=100000000 -ff=data/exercise3.txt $options > /dev/null 2>&1
     fi
     ;;
+4)
+    echo -e "\e[33mExecuting Exercise 4 on $job_num threads...\e[0m"
+    # 10000 loops, 1 thread
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4
+        $executable -e 4 -fc -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4
+        $executable -e 4 -fb -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4
+    else 
+        $executable -e 4 -fp -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+    fi
+    # 100000 loops, 1 thread
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4
+        $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4
+        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4
+    else 
+        $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+    fi
+    # 1000000 loops, 1 thread
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4
+        $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4
+        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4
+    else 
+        $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+    fi
+    # 10000000 loops, 1 thread
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4
+        $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4
+        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4
+    else 
+        $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+    fi
+    # 100000, 2 threads
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4
+        $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4
+        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4
+    else 
+        $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+    fi
+    # 1000000, 2 threads
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4
+        $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4
+        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4
+    else 
+        $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+    fi
+    # 10000000, 2 threads
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4
+        $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4
+        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4
+    else 
+        $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+    fi
+    # 100000, 4 threads
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4
+        $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4
+        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4
+    else 
+        $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+    fi
+    # 1000000, 4 threads
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4
+        $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4
+        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4
+    else 
+        $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+    fi
+    # 10000000, 4 threads
+    if [ "$mute" = false ]; then
+        $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4
+        $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4
+        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4
+    else 
+        $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+    fi
+5) 
+    echo -e "\e[33mExecuting Exercise 5 on $job_num threads...\e[0m"
+    # 1000x1000 matrix
+    if [ "$mute" = false ]; then
+        $executable -e 5 -fO0 -fm=1000x1000 -fu -ff=data/exercise5.txt $options
+        $executable -e 5 -fO1 -fi=1000x1000 -fu -ff=data/exercise5.txt $options
+    else 
+        $executable -e 5 -fO0 -fm=1000x1000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
+        $executable -e 5 -fO1 -fi=1000x1000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
+    fi
+    # 10000x10000 matrix
+    if [ "$mute" = false ]; then
+        $executable -e 5 -fO0 -fm=10000x10000 -fu -ff=data/exercise5.txt $options
+        $executable -e 5 -fO1 -fi=10000x10000 -fu -ff=data/exercise5.txt $options
+    else 
+        $executable -e 5 -fO0 -fm=10000x10000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
+        $executable -e 5 -fO1 -fi=10000x10000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
+    fi
+    # 100000x100000 matrix
+    if [ "$mute" = false ]; then
+        $executable -e 5 -fO0 -fm=100000x100000 -fu -ff=data/exercise5.txt $options
+        $executable -e 5 -fO1 -fi=100000x100000 -fu -ff=data/exercise5.txt $options
+    else 
+        $executable -e 5 -fO0 -fm=100000x100000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
+        $executable -e 5 -fO1 -fi=100000x100000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
+    fi
+    # 1000000x1000000 matrix
+    if [ "$mute" = false ]; then
+        $executable -e 5 -fO0 -fm=1000000x1000000 -fu -ff=data/exercise5.txt $options
+        $executable -e 5 -fO1 -fi=1000000x1000000 -fu -ff=data/exercise5.txt $options
+    else 
+        $executable -e 5 -fO0 -fm=1000000x1000000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
+        $executable -e 5 -fO1 -fi=1000000x1000000 -fu -ff=data/exercise5.txt $options > /dev/null 2>&1
+    fi
+6)
+    echo -e "\e[33mExecuting Exercise 6 on $job_num threads...\e[0m"
+    # 64x64 matrix, 1000 generations
+    if [ "$mute" = false ]; then
+        $executable -e 6 -fs -fm=64x64 -fg=1000 -ff=data/exercise6.txt $options
+        $executable -e 6 -fp -fm=64x64 -fg=1000 -ff=data/exercise6.txt $options
+    else 
+        $executable -e 6 -fs -fm=64x64 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+        $executable -e 6 -fp -fi=64x64 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+    fi
+    # 1024x1024 matrix, 1000 generations
+    if [ "$mute" = false ]; then
+        $executable -e 6 -fs -fm=1024x1024 -fg=1000 -ff=data/exercise6.txt $options
+        $executable -e 6 -fp -fi=1024x1024 -fg=1000 -ff=data/exercise6.txt $options
+    else 
+        $executable -e 6 -fs -fm=1024x1024 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+        $executable -e 6 -fp -fi=1024x1024 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+    fi
+    # 2048x2048 matrix, 1000 generations
+    if [ "$mute" = false ]; then
+        $executable -e 6 -fs -fm=2048x2048 -fg=1000 -ff=data/exercise6.txt $options
+        $executable -e 6 -fp -fi=2048x2048 -fg=1000 -ff=data/exercise6.txt $options
+    else 
+        $executable -e 6 -fs -fm=2048x2048 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+        $executable -e 6 -fp -fi=2048x2048 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+    fi
+    # 4096x4096 matrix, 1000 generations
+    if [ "$mute" = false ]; then
+        $executable -e 6 -fs -fm=4096x4096 -fg=1000 -ff=data/exercise6.txt $options
+        $executable -e 6 -fp -fi=4096x4096 -fg=1000 -ff=data/exercise6.txt $options
+    else 
+        $executable -e 6 -fs -fm=4096x4096 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+        $executable -e 6 -fp -fi=4096x4096 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+    fi
+7) 
+    echo -e "\e[33mExecuting Exercise 7 on $job_num threads...\e[0m"
+    # 64x64 matrix
+    if [ "$mute" = false ]; then
+        $executable -e 7 -fs -fpc -fm=64 -ff=data/exercise7.txt $options
+        $executable -e 7 -fs -fpr -fm=64 -ff=data/exercise7.txt $options
+        $executable -e 7 -fp -fpc -fm=64 -ff=data/exercise7.txt $options
+        $executable -e 7 -fp -fpr -fm=64 -ff=data/exercise7.txt $options
+    else 
+        $executable -e 7 -fs -fpc -fm=64 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fs -fpr -fm=64 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fp -fpc -fm=64 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fp -fpr -fm=64 -ff=data/exercise7.txt $options > /dev/null 2>&1
+    fi
+    # 1024x1024 matrix
+    if [ "$mute" = false ]; then
+        $executable -e 7 -fs -fpc -fm=1024 -ff=data/exercise7.txt $options
+        $executable -e 7 -fs -fpr -fm=1024 -ff=data/exercise7.txt $options
+        $executable -e 7 -fp -fpc -fm=1024 -ff=data/exercise7.txt $options
+        $executable -e 7 -fp -fpr -fm=1024 -ff=data/exercise7.txt $options
+    else 
+        $executable -e 7 -fs -fpc -fm=1024 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fs -fpr -fm=1024 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fp -fpc -fm=1024 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fp -fpr -fm=1024 -ff=data/exercise7.txt $options > /dev/null 2>&1
+    fi
+    # 2048x2048 matrix
+    if [ "$mute" = false ]; then
+        $executable -e 7 -fs -fpc -fm=2048 -ff=data/exercise7.txt $options
+        $executable -e 7 -fs -fpr -fm=2048 -ff=data/exercise7.txt $options
+        $executable -e 7 -fp -fpc -fm=2048 -ff=data/exercise7.txt $options
+        $executable -e 7 -fp -fpr -fm=2048 -ff=data/exercise7.txt $options
+    else 
+        $executable -e 7 -fs -fpc -fm=2048 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fs -fpr -fm=2048 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fp -fpc -fm=2048 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fp -fpr -fm=2048 -ff=data/exercise7.txt $options > /dev/null 2>&1
+    fi
+    # 4096x4096 matrix
+    if [ "$mute" = false ]; then
+        $executable -e 7 -fs -fpc -fm=4096 -ff=data/exercise7.txt $options
+        $executable -e 7 -fs -fpr -fm=4096 -ff=data/exercise7.txt $options
+        $executable -e 7 -fp -fpc -fm=4096 -ff=data/exercise7.txt $options
+        $executable -e 7 -fp -fpr -fm=4096 -ff=data/exercise7.txt $options
+    else 
+        $executable -e 7 -fs -fpc -fm=4096 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fs -fpr -fm=4096 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fp -fpc -fm=4096 -ff=data/exercise7.txt $options > /dev/null 2>&1
+        $executable -e 7 -fp -fpr -fm=4096 -ff=data/exercise7.txt $options > /dev/null 2>&1
+    fi
+    ;;
+8) 
+    echo -e "\e[33mExecuting Exercise 8 on $job_num threads...\e[0m"
+    # 10000 array
+    if [ "$mute" = false ]; then
+        $executable -e 8 -fs -fn=10000 -ff=data/exercise8.txt $options
+        $executable -e 8 -fp -fn=10000 -ff=data/exercise8.txt $options
+    else 
+        $executable -e 8 -fs -fn=10000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+        $executable -e 8 -fp -fn=10000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+    fi
+    # 100000 array
+    if [ "$mute" = false ]; then
+        $executable -e 8 -fs -fn=100000 -ff=data/exercise8.txt $options
+        $executable -e 8 -fp -fn=100000 -ff=data/exercise8.txt $options
+    else 
+        $executable -e 8 -fs -fn=100000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+        $executable -e 8 -fp -fn=100000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+    fi
+    # 1000000 array
+    if [ "$mute" = false ]; then
+        $executable -e 8 -fs -fn=1000000 -ff=data/exercise8.txt $options
+        $executable -e 8 -fp -fn=1000000 -ff=data/exercise8.txt $options
+    else 
+        $executable -e 8 -fs -fn=1000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+        $executable -e 8 -fp -fn=1000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+    fi
+    # 10000000 array
+    if [ "$mute" = false ]; then
+        $executable -e 8 -fs -fn=10000000 -ff=data/exercise8.txt $options
+        $executable -e 8 -fp -fn=10000000 -ff=data/exercise8.txt $options
+    else 
+        $executable -e 8 -fs -fn=10000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+        $executable -e 8 -fp -fn=10000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+    fi
+    # 100000000 array
+    if [ "$mute" = false ]; then
+        $executable -e 8 -fs -fn=100000000 -ff=data/exercise8.txt $options
+        $executable -e 8 -fp -fn=100000000 -ff=data/exercise8.txt $options
+    else 
+        $executable -e 8 -fs -fn=100000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+        $executable -e 8 -fp -fn=100000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
+    fi
 *)
     echo -e "\e[31mERROR! Invalid exercise number!\e[0m"
     exit 1
