@@ -210,101 +210,101 @@ case $jmp_to in
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4
         $executable -e 4 -fc -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4
-        $executable -e 4 -fb -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4
+        #$executable -e 4 -fb -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4
     else 
         $executable -e 4 -fp -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=10000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
     fi
     # 100000 loops, 1 thread
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4
         $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4
-        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4
+        #$executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4
     else 
         $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
     fi
     # 1000000 loops, 1 thread
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4
         $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4
-        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4
+        #$executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4
     else 
         $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
     fi
     # 10000000 loops, 1 thread
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4
         $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4
-        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4
+        #$executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4
     else 
         $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=1 -ft=4 > /dev/null 2>&1
     fi
     # 100000, 2 threads
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4
         $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4
-        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4
+        #$executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4
     else 
         $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
     fi
     # 1000000, 2 threads
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4
         $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4
-        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4
+        #$executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4
     else 
         $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
     fi
     # 10000000, 2 threads
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4
         $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4
-        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4
+        #$executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4
     else 
         $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=2 -ft=4 > /dev/null 2>&1
     fi
     # 100000, 4 threads
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4
         $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4
-        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4
+        #$executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4
     else 
         $executable -e 4 -fp -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=100000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
     fi
     # 1000000, 4 threads
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4
         $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4
-        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4
+        #$executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4
     else 
         $executable -e 4 -fp -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=1000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
     fi
     # 10000000, 4 threads
     if [ "$mute" = false ]; then
         $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4
         $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4
-        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4
+        #$executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4
     else 
         $executable -e 4 -fp -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
         $executable -e 4 -fc -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
-        $executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
+        #$executable -e 4 -fb -fi=10000000 -ff=data/exercise4.txt -fj=4 -ft=4 > /dev/null 2>&1
     fi
 5) 
     echo -e "\e[33mExecuting Exercise 5 on $job_num threads...\e[0m"
