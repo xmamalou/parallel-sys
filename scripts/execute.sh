@@ -129,12 +129,8 @@ case $jmp_to in
 6)
     echo -e "\e[33mExecuting Exercise 6...\e[0m"
 
-    for matrix in 64 128 256 512 1024 2048 4096; do
-        $executable -e 6 -fs -fm=$matrix -fg=1000 -ff=data/exercise6.txt -fj=$jobs -ft=4
-    done
-
     for jobs in {1..8}; do
-        for matrix in 64 128 256 512 1024 2048 4096; do
+        for matrix in 64 128 256 512 1024; do
             $executable -e 6 -fp -fm=$matrix -fg=1000 -ff=data/exercise6.txt -fj=$jobs -ft=4
         done
     done
@@ -142,13 +138,13 @@ case $jmp_to in
 7) 
     echo -e "\e[33mExecuting Exercise 7...\e[0m"
  
-    for matrix in 64 128 256 512 1024 2048 4096; do
+    for matrix in 64 128 256 512 1024; do
         $executable -e 7 -fs -fp -fpr -fm=$matrix -ff=data/exercise7.txt -fj=$jobs -ft=4
         $executable -e 7 -fs -fp -fpc -fm=$matrix -ff=data/exercise7.txt -fj=$jobs -ft=4
     done
-    
+
     for jobs in {1..8}; do
-        for matrix in 64 128 256 512 1024 2048 4096; do
+        for matrix in 64 128 256 512 1024; do
             $executable -e 7 -fp -fpr -fm=$matrix -ff=data/exercise7.txt -fj=$jobs -ft=4
             $executable -e 7 -fp -fpc -fm=$matrix -ff=data/exercise7.txt -fj=$jobs -ft=4
         done
