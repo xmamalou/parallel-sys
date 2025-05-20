@@ -45,13 +45,11 @@ typedef struct Options {
     Which    which_algo;
     uint32_t job_count;
     uint64_t generations;
-    char     matrix_dims[4]; // 2 digits for each dimension, an `x` and null terminator
-    char     data_path[PATH_MAX];
-    uint32_t columns;
-    uint32_t rows;
+    uint64_t matrix_dims; // the matrix is square
     bool*    A[2];
     uint32_t tries;
     bool     animate; // Whether to animate the game of life or not (show it in the terminal)
+    char     data_path[PATH_MAX];
 } Options;
 
 // --- CONSTANTS --- //
@@ -106,14 +104,14 @@ void game_of_life(
         .job_count           = 1,
         .which_algo          = SERIAL,
         .generations         = 1,
-        .matrix_dims         = "",
+        .matrix_dims         = 0,
         .data_path           = "",
-        .columns             = 0,
-        .rows                = 0,
         .A                   = {NULL, NULL},
         .tries               = 1,
         .animate             = false,
     };
+    // TODO: WHY, FOR THE LOVE OF GOD, DO THE MATRIX DIMENSIONS LEAK
+    // TODO: TO THE FILE NAME FLAG????????
     read_flags(
             flags, flag_count,
             &options);
@@ -127,7 +125,7 @@ void game_of_life(
                 "* You will run the %s version\n"
                 "* You want %u jobs\n"
                 "* The game will run for %d generations\n"
-                "* The matrix will have dimensions %s\n"
+                "* The matrix will have dimensions %u x %u\n"
                 "* Data will be saved to %s\n"
                 "* The experiment will be run %d tries\n"
                 "* Animation is %s\n"
@@ -136,42 +134,37 @@ void game_of_life(
                 options.job_count, 
                 options.generations,
                 options.matrix_dims,
+                options.matrix_dims,
                 options.data_path,
                 options.tries,
-                options.animate && options.which_algo == SERIAL 
-                        ? "enabled" 
+                options.animate == true
+                        ? "enabled"
                         : "disabled");
     }
-
-    sscanf(
-            options.matrix_dims,
-            "%ux%u",
-            &options.columns,
-            &options.rows);
 
     uint32_t seed = 10000;
     // The algorithm will use one matrix to update the other matrix
     // in a circular fashion
     options.A[0] = (bool*)calloc(
-            options.columns*options.rows,
+            options.matrix_dims * options.matrix_dims,
             sizeof(bool));
     options.A[1] = (bool*)calloc(
-            options.columns*options.rows,
+            options.matrix_dims * options.matrix_dims,
             sizeof(bool));
-            
+
     // Fill the first matrix with random values
     FILE* urandom = fopen("/dev/urandom", "r");
-    for (uint32_t i = 0; i < options.columns; i++)
+    for (uint32_t i = 0; i < options.matrix_dims; i++)
     {
-        for (uint32_t j = 0; j < options.rows; j++)
+        for (uint32_t j = 0; j < options.matrix_dims; j++)
         {
             uint32_t rand_num = 0;
             fread(&rand_num, sizeof(bool), 1, urandom);
-            options.A[0][i + options.columns*j] = rand_num % 2 == 0
+            options.A[0][i + options.matrix_dims*j] = rand_num % 2 == 0
                     ? true
                     : false;
             fread(&rand_num, sizeof(bool), 1, urandom);
-            options.A[1][i + options.columns*j] = rand_num % 2 == 0
+            options.A[1][i + options.matrix_dims*j] = rand_num % 2 == 0
                     ? true
                     : false;
         }
@@ -190,7 +183,7 @@ void game_of_life(
     CALCULATE_TIME(time_of_execution);
 
     LOG(
-            "[EXERCISE 6]\ntype = %s\njobs = %d\nmatrix = %s\ngenerations = %d\ntime = %f\n",
+            "[EXERCISE 6]\ntype = %s\njobs = %d\nmatrix = %u\ngenerations = %d\ntime = %f\n",
             implm_string[options.which_algo],
             options.job_count,
             options.matrix_dims,
@@ -211,11 +204,11 @@ FLAG_READER(options_p)
     SET_FLAG("-fp", options_p->which_algo, PARALLEL);
     SET_FLAG("-fparallel", options_p->which_algo, PARALLEL);
 
-    SET_FLAG_WITH_NUM("-fgen", options_p->generations, ll);
+    SET_FLAG_WITH_NUM("-fgen=", options_p->generations, ll);
     SET_FLAG_WITH_NUM("-fg=", options_p->generations, ll);
 
-    SET_FLAG_WITH_STRING("-fmatrix=", options_p->matrix_dims);
-    SET_FLAG_WITH_STRING("-fm=", options_p->matrix_dims);
+    SET_FLAG_WITH_NUM("-fmatrix=", options_p->matrix_dims, ll);
+    SET_FLAG_WITH_NUM("-fm=", options_p->matrix_dims, ll);
 
     SET_FLAG("-fanimate", options_p->animate, true);
     SET_FLAG("-fa", options_p->animate, true);
@@ -277,32 +270,34 @@ EXERCISE_IMPLM_DECL(game_of_life_serial)
     
     for (uint32_t l = 0; l < options_p->tries; l++)
     {
-        BENCHMARK_T benchmark = start_benchmark();
         for (uint32_t k = 0; k < options_p->generations; k++)
         {
-            for (uint32_t i = 0; i < options_p->columns; i++)
+            BENCHMARK_T benchmark = start_benchmark();
+            for (uint32_t i = 0; i < options_p->matrix_dims; i++)
             {
-                for (uint32_t j = 0; j < options_p->rows; j++)
+                for (uint32_t j = 0; j < options_p->matrix_dims; j++)
                 {
-                    options_p->A[1 - which_matrix % 2][i + j*options_p->columns] = is_alive(
+                    options_p->A[1 - which_matrix % 2][i + j*options_p->matrix_dims] = is_alive(
                             options_p->A[which_matrix % 2], 
-                            options_p->columns, options_p->rows,
+                            options_p->matrix_dims, options_p->matrix_dims,
                             i, j);
                 }
             }
             which_matrix++;
+            RECORD(benchmark); // we record the time before the animation, since this will add up time that 
+            // doesn't matter for the algorithm itself
 
             if (options_p->animate)
             {
                 system("clear");
                 show_matrix(
                         options_p->A[1 - which_matrix % 2], 
-                        options_p->columns, options_p->rows,
+                        options_p->matrix_dims, options_p->matrix_dims,
                         k);
                 usleep(160000);
             }
         }
-        RECORD(benchmark);
+
     }
 }
 
@@ -312,34 +307,42 @@ EXERCISE_IMPLM_DECL(game_of_life_parallel)
     
     for (uint32_t l = 0; l < options_p->tries; l++)
     {
-        BENCHMARK_T benchmark = start_benchmark();
         bool* A[2] = {
             options_p->A[0],
             options_p->A[1],
         };
-        uint32_t columns = options_p->columns, 
-                rows = options_p->rows, 
-                generations = options_p->generations, 
-                i, j;
+        uint32_t matrix_dims = options_p->matrix_dims;
         bool animate = options_p->animate;
-        #pragma omp parallel for num_threads(options_p->job_count) \
-                default(none) private(i, j) shared( \
-                        A, columns, rows, generations, which_matrix, animate)
-        for (uint32_t k = 0; k < generations; k++)
+
+        for (uint32_t k = 0; k < options_p->generations; k++)
         {
-            for (uint32_t i = 0; i < columns; i++)
+            BENCHMARK_T benchmark = start_benchmark();
+            #pragma omp parallel for num_threads(options_p->job_count) \
+                default(none) shared( \
+                        A, matrix_dims, which_matrix, animate)
+            for (uint32_t i = 0; i < matrix_dims; i++)
             {
-                for (uint32_t j = 0; j < rows; j++)
+                for (uint32_t j = 0; j < matrix_dims; j++)
                 {
-                    A[1 - which_matrix % 2][i + j*columns] = is_alive(
+                    A[1 - which_matrix % 2][i + j*matrix_dims] = is_alive(
                             A[which_matrix % 2], 
-                            columns, rows,
+                            matrix_dims, matrix_dims,
                             i, j);
                 }
             }
             which_matrix++;
+            RECORD(benchmark);
+
+            if (options_p->animate)
+            {
+                system("clear");
+                show_matrix(
+                        options_p->A[1 - which_matrix % 2], 
+                        options_p->matrix_dims, options_p->matrix_dims,
+                        k);
+                usleep(160000);
+            }
         }
-        RECORD(benchmark);
     }
 }
 
@@ -354,9 +357,9 @@ static void show_matrix(
         {
             if (A[i + j*columns] == true)
             {
-                printf("█");
+                printf("█"); // filled square == alive cell
             } else {
-                printf("┼");
+                printf("┼"); 
             }
         }
         printf("\n");
