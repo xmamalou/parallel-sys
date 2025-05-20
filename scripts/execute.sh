@@ -350,31 +350,31 @@ case $jmp_to in
         $executable -e 6 -fp -fm=64x64 -fg=1000 -ff=data/exercise6.txt $options
     else 
         $executable -e 6 -fs -fm=64x64 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
-        $executable -e 6 -fp -fi=64x64 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+        $executable -e 6 -fp -fm=64x64 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
     fi
     # 1024x1024 matrix, 1000 generations
     if [ "$mute" = false ]; then
         $executable -e 6 -fs -fm=1024x1024 -fg=1000 -ff=data/exercise6.txt $options
-        $executable -e 6 -fp -fi=1024x1024 -fg=1000 -ff=data/exercise6.txt $options
+        $executable -e 6 -fp -fm=1024x1024 -fg=1000 -ff=data/exercise6.txt $options
     else 
         $executable -e 6 -fs -fm=1024x1024 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
-        $executable -e 6 -fp -fi=1024x1024 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+        $executable -e 6 -fp -fm=1024x1024 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
     fi
     # 2048x2048 matrix, 1000 generations
     if [ "$mute" = false ]; then
         $executable -e 6 -fs -fm=2048x2048 -fg=1000 -ff=data/exercise6.txt $options
-        $executable -e 6 -fp -fi=2048x2048 -fg=1000 -ff=data/exercise6.txt $options
+        $executable -e 6 -fp -fm=2048x2048 -fg=1000 -ff=data/exercise6.txt $options
     else 
         $executable -e 6 -fs -fm=2048x2048 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
-        $executable -e 6 -fp -fi=2048x2048 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+        $executable -e 6 -fp -fm=2048x2048 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
     fi
     # 4096x4096 matrix, 1000 generations
     if [ "$mute" = false ]; then
         $executable -e 6 -fs -fm=4096x4096 -fg=1000 -ff=data/exercise6.txt $options
-        $executable -e 6 -fp -fi=4096x4096 -fg=1000 -ff=data/exercise6.txt $options
+        $executable -e 6 -fp -fm=4096x4096 -fg=1000 -ff=data/exercise6.txt $options
     else 
         $executable -e 6 -fs -fm=4096x4096 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
-        $executable -e 6 -fp -fi=4096x4096 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
+        $executable -e 6 -fp -fm=4096x4096 -fg=1000 -ff=data/exercise6.txt $options > /dev/null 2>&1
     fi
     ;&
 7) 
