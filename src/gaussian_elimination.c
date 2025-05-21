@@ -276,7 +276,7 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pc)
                                 FLIP_INDEX(omp_get_thread_num(), options_p->matrix_dims)];
             for (uint64_t j = 0; j < omp_get_thread_num(); j++)
             {
-                #pragma omp atomic
+                #pragma omp critical
                 options_p->x[j] -= options_p->A[j 
                         + options_p->matrix_dims*FLIP_INDEX(omp_get_thread_num(), options_p->matrix_dims)]
                         *options_p->x[FLIP_INDEX(omp_get_thread_num(), options_p->matrix_dims)];
