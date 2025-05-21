@@ -187,9 +187,10 @@ void better_mul(
     CALCULATE_TIME(time_of_execution);
 
     LOG(
-        "[EXERCISE 5]\ntype = %s\njobs = %d\ntime = %f\n",
+        "[EXERCISE 5]\ntype = %s\njobs = %d\ndims = %d\ntime = %f\n",
         implm_string[options.which_implm],
         options.job_count,
+        options.columns,
         time_of_execution);
 
     free(options.A);
@@ -255,14 +256,13 @@ EXERCISE_IMPLM_DECL(better_mul_opt)
         uint32_t rows = options_p->rows;
         BENCHMARK_T benchmark = start_benchmark();
         #pragma omp parallel for num_threads(options_p->job_count)  \
-                default(none) private(i, j, temp)  shared( \
-                        A, x, y, columns, rows, time_of_execution_p)
+                schedule(static, 4)
         for (i = 0; i < columns; i++) 
         {
                 temp = 0.0;
                 for (j = i; j < columns - i; j++) 
                 {
-                    temp += A[i + columns*j]*A[j];
+                    temp += A[i + columns*j]*x[j];
                 }
                 A[i] = temp;
         }
