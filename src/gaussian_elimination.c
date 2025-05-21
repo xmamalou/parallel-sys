@@ -144,9 +144,9 @@ void gaussian_elimination(
             {
                 options.A[i + options.matrix_dims*j] = 0.0; // I wish C had lvalue references
             } else {
-                uint32_t rand_num;
-                fread(&rand_num, sizeof(uint32_t), 1, urandom);
-                options.A[i + options.matrix_dims*j] = (double)rand_num/(double)RAND_MAX;
+                uint8_t rand_num;
+                fread(&rand_num, sizeof(uint8_t), 1, urandom);
+                options.A[i + options.matrix_dims*j] = (uint32_t)rand_num;
             }
         }
     }
@@ -267,23 +267,19 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pc)
     for (uint64_t k = 0; k < options_p->tries; k++)
     {
         BENCHMARK_T benchmark = start_benchmark();
-        #pragma omp parallel for num_threads(options_p->job_count)
-        for (uint64_t i = 0; i < options_p->matrix_dims; i++)
+        #pragma omp parallel num_threads(options_p->job_count)
         {
-            options_p->x[i] = options_p->b[i];
-        }
+            options_p->x[omp_get_thread_num()] = options_p->b[omp_get_thread_num()];
 
-        #pragma omp parallel for num_threads(options_p->job_count)
-        for (uint64_t i = 0; i < options_p->matrix_dims; i++)
-        {
-            options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
-                    /= options_p->A[FLIP_INDEX(i, options_p->matrix_dims) + options_p->matrix_dims* 
-                            FLIP_INDEX(i, options_p->matrix_dims)];
-            for (uint64_t j = 0; j < i; j++)
+            options_p->x[FLIP_INDEX(omp_get_thread_num(), options_p->matrix_dims)] 
+                        /= options_p->A[FLIP_INDEX(omp_get_thread_num(), options_p->matrix_dims) + options_p->matrix_dims* 
+                                FLIP_INDEX(omp_get_thread_num(), options_p->matrix_dims)];
+            for (uint64_t j = 0; j < omp_get_thread_num(); j++)
             {
+                #pragma omp atomic
                 options_p->x[j] -= options_p->A[j 
-                        + options_p->matrix_dims*FLIP_INDEX(i, options_p->matrix_dims)]
-                        *options_p->x[FLIP_INDEX(i, options_p->matrix_dims)];
+                        + options_p->matrix_dims*FLIP_INDEX(omp_get_thread_num(), options_p->matrix_dims)]
+                        *options_p->x[FLIP_INDEX(omp_get_thread_num(), options_p->matrix_dims)];
             }
         }
         RECORD(benchmark);
@@ -295,20 +291,16 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pr)
     for (uint64_t k = 0; k < options_p->tries; k++)
     {
         BENCHMARK_T benchmark = start_benchmark();
-        #pragma omp parallel for num_threads(options_p->job_count)
-        for (uint64_t i = 0; i < options_p->matrix_dims; i++)
+        for (int32_t i = options_p->matrix_dims - 1; i >= 0; i--)
         {
-            options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
-                    = options_p->b[FLIP_INDEX(i, options_p->matrix_dims)];
-            for (uint64_t j = i+1; j < options_p->matrix_dims; j++)
+            options_p->x[i] = options_p->b[i];
+            #pragma omp parallel for num_threads(options_p->job_count) \
+                shared(i)
+            for (int32_t j = i+1; j < options_p->matrix_dims; j++)
             {
-                options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
-                        -= options_p->A[FLIP_INDEX(i, options_p->matrix_dims) 
-                                + options_p->matrix_dims*j]
-                                *options_p->x[j];
+                options_p->x[i] -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[j];
             }
-            options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
-                    /= options_p->A[FLIP_INDEX(i, options_p->matrix_dims) + options_p->matrix_dims*FLIP_INDEX(i, options_p->matrix_dims)];
+            options_p->x[i] /= options_p->A[i + options_p->matrix_dims*i];
         }
         RECORD(benchmark);
     }
