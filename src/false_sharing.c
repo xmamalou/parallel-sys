@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <linux/limits.h>
+#include <assert.h>
 
 #include "utility.h"
 #include "macros.h"
@@ -147,6 +148,7 @@ EXERCISE_IMPLM_DECL(false_sharing_impl)
 {
     switch (options_p->which_method)
     {
+    case NO_SYNC:
     case MUTEX:
         incremented_gs = calloc(options_p->job_count, sizeof(uint32_t)); 
         break;
@@ -195,6 +197,13 @@ EXERCISE_IMPLM_DECL(false_sharing_impl)
             threads[i] == NULL;
         }
         RECORD(bench_h);
+
+        for (uint32_t i = 0; i < options_p->job_count; i++)
+        {
+            assert(
+                    incremented_gs[i] == options_p->incr_times
+                ||  incremented_atom_gs[i] == options_p->incr_times);
+        }
     }
 
     // TODO: This breaks if the threads are more than 3. Currenty, we will just allow the dangling pointer
