@@ -42,8 +42,8 @@ typedef struct Options {
     uint32_t job_count;
     Which    which_implm;
     char     matrix_dims[PATH_MAX];
-    uint32_t columns;
-    uint32_t rows;
+    uint64_t columns;
+    uint64_t rows;
     double*  A;
     double*  x;
     double*  y;
@@ -141,6 +141,7 @@ void better_mul(
     options.A = calloc(
             columns*(options.is_upper_triangular ? columns : rows),
             sizeof(double));
+    FILE* urandom = fopen("/dev/urandom", "r");
     for (uint32_t i = 0; i < columns; i++)
     {
         for (uint32_t j = 0; j < (options.is_upper_triangular ? columns : rows); j++)
@@ -149,7 +150,9 @@ void better_mul(
             {
                 options.A[i + columns*j] = 0.0; // I wish C had lvalue references
             } else {
-                options.A[i + columns*j] = (double)rand_r(&seed)/(double)RAND_MAX;
+                uint8_t rand_num;
+                fread(&rand_num, sizeof(uint8_t), 1, urandom);
+                options.A[i + columns*j] = (double)rand_num/20.0;
             }
             seed++;
         }
@@ -161,9 +164,12 @@ void better_mul(
             sizeof(double));
     for (uint32_t i = 0; i < rows; i++)
     {
-        options.x[i] = (double)rand_r(&seed)/(double)RAND_MAX;
+        uint32_t rand_num;
+        fread(&rand_num, sizeof(uint32_t), 1, urandom);
+        options.x[i] = (double)rand_num/20.0;
         seed++;
     }
+    fclose(urandom);
 
     options.y = calloc(
             columns,
