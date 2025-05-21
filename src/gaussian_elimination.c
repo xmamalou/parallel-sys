@@ -277,12 +277,15 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pc)
             for (uint32_t i = 0; i < options_p->matrix_dims; i++)
             {
                 options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] /= options_p->A[i + options_p->matrix_dims*i];
-                #pragma omp parallel for num_threads(options_p->job_count) 
+
+                double temp = options_p->x[FLIP_INDEX(i, options_p->matrix_dims)];
+                #pragma omp parallel for num_threads(options_p->job_count) \
+                    reduction(-:temp)
                 for (uint64_t j = i+1; j < options_p->matrix_dims; j++)
                 {
-                    options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] 
-                            -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[FLIP_INDEX(j, options_p->matrix_dims)];
+                    temp -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[FLIP_INDEX(j, options_p->matrix_dims)];
                 }
+                options_p->x[FLIP_INDEX(i, options_p->matrix_dims)] = temp;
             }
         }
         RECORD(benchmark);
@@ -297,13 +300,14 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pr)
         for (int32_t i = options_p->matrix_dims - 1; i >= 0; i--)
         {
             options_p->x[i] = options_p->b[i];
+            double temp = options_p->x[i];
             #pragma omp parallel for num_threads(options_p->job_count) \
-                shared(i)
+                shared(i) reduction(-:temp)
             for (int32_t j = i+1; j < options_p->matrix_dims; j++)
             {
-                options_p->x[i] -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[j];
+                temp -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[j];
             }
-            options_p->x[i] /= options_p->A[i + options_p->matrix_dims*i];
+            options_p->x[i] = temp / options_p->A[i + options_p->matrix_dims*i];
         }
         RECORD(benchmark);
     }
