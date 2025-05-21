@@ -142,8 +142,8 @@ case $jmp_to in
     echo -e "\e[33mExecuting Exercise 7...\e[0m"
 
     for matrix in 1024 2048 4096 8192 16384; do
-        $executable -e 7 -fs -fp -fpr -fm=$matrix -ff=data/exercise7.txt -fj=$jobs -ft=4
-        $executable -e 7 -fs -fp -fpc -fm=$matrix -ff=data/exercise7.txt -fj=$jobs -ft=4
+        $executable -e 7 -fs -fpr -fm=$matrix -ff=data/exercise7.txt -fj=$jobs -ft=4
+        $executable -e 7 -fs -fpc -fm=$matrix -ff=data/exercise7.txt -fj=$jobs -ft=4
     done
 
     for jobs in {1..8}; do
