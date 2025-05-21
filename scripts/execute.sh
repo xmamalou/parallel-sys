@@ -63,7 +63,7 @@ fi
 # Remove previous output files
 for i in {$jmp..9}; do
     if [ -f "./data/exercise${i}.txt" ]; then
-        rm ./data/exercise${i}.txt
+        rm "./data/exercise${i}.txt"
     fi
 done
 
