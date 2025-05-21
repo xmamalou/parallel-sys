@@ -120,7 +120,7 @@ case $jmp_to in
 5) 
     echo -e "\e[33mExecuting Exercise 5...\e[0m"
     for jobs in {1..8}; do
-        for throws in 10000 100000 1000000 10000000 100000000; do
+        for throws in 100 1000 10000 100000 1000000; do
             $executable -e 5 -fO0 -fm=$"$throws"x$"$throws" -fu -ff=data/exercise5.txt -fj=$jobs -ft=4
             $executable -e 5 -fO1 -fm=$"$throws"x$"$throws" -fu -ff=data/exercise5.txt -fj=$jobs -ft=4
         done
