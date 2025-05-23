@@ -117,6 +117,7 @@ float: false)[
 #include "exercise4.typ"
 
 = ΑΣΚΗΣΗ 5
+#include "exercise5.typ"
 
 = ΑΣΚΗΣΗ 6
 #include "exercise6.typ"
@@ -125,3 +126,4 @@ float: false)[
 #include "exercise7.typ"
 
 = ΑΣΚΗΣΗ 8
+#include "exercise8.typ"
