@@ -91,8 +91,8 @@ case $jmp_to in
 
     for jobs in {1..8}; do
         for throws in 10000 100000 1000000 10000000 100000000; do
-            $executable -e 2 -fl -fi=$throws -ff=data/exercise2.txt -fj=$jobs -ft=4
-            $executable -e 2 -fa -fi=$throws -ff=data/exercise2.txt -fj=$jobs -ft=4
+            "$executable-dbg" -e 2 -fl -fi=$throws -ff=data/exercise2.txt -fj=$jobs -ft=4 || echo -e "[EXERCISE 2 - ABORTED]\ntype = locks\njobs = $jobs\nloops = $throws\n" >> ./data/exercise2_error.txt
+            "$executable-dbg" -e 2 -fa -fi=$throws -ff=data/exercise2.txt -fj=$jobs -ft=4 || echo -e "[EXERCISE 2 - ABORTED]\ntype = atomics\njobs = $jobs\nloops = $throws\n" >> ./data/exercise2_error.txt
         done
     done
     ;&
@@ -101,9 +101,9 @@ case $jmp_to in
     echo -e "\e[33mExecuting Exercise 3...\e[0m"
     for jobs in {1..8}; do
         for throws in 10000 100000 1000000 10000000 100000000; do
-            $executable -e 3 -fl -fi=$throws -ff=data/exercise3.txt -fj=$jobs -ft=4
-            $executable -e 3 -fa -fi=$throws -ff=data/exercise3.txt -fj=$jobs -ft=4
-            $executable -e 3 -fns -fi=$throws -ff=data/exercise3.txt -fj=$jobs -ft=4 || echo "SYNCHRONIZATION IS NECESSARY" > ./data/exercise3_error.txt
+            "$executable-dbg" -e 3 -fl -fi=$throws -ff=data/exercise3.txt -fj=$jobs -ft=4 || echo -e "[EXERCISE 3 - ABORTED]\ntype = locks\njobs = $jobs\nloops = $throws\n" >> ./data/exercise3_error.txt
+            "$executable-dbg" -e 3 -fa -fi=$throws -ff=data/exercise3.txt -fj=$jobs -ft=4 || echo -e "[EXERCISE 3 - ABORTED]\ntype = atomics\njobs = $jobs\nloops = $throws\n" >> ./data/exercise3_error.txt
+            "$executable-dbg" -e 3 -fns -fi=$throws -ff=data/exercise3.txt -fj=$jobs -ft=4 || echo -e "[EXERCISE 3 - ABORTED]\ntype = no synchronization\njobs = $jobs\nloops = $throws\n" >> ./data/exercise3_error.txt
         done
     done
     ;&
@@ -111,9 +111,9 @@ case $jmp_to in
     echo -e "\e[33mExecuting Exercise 4...\e[0m"
     for jobs in {1..8}; do
         for throws in 1000 10000 100000 1000000; do
-            $executable -e 4 -fp -fn=$throws -ff=data/exercise4.txt -fj=$jobs -ft=4
-            $executable -e 4 -fc -fn=$throws -ff=data/exercise4.txt -fj=$jobs -ft=4
-            $"$executable-dbg" -e 4 -fb -fn=$throws -ff=data/exercise4.txt -fj=$jobs -ft=4
+            "$executable-dbg" -e 4 -fp -fn=$throws -ff=data/exercise4.txt -fj=$jobs -ft=4
+            "$executable-dbg" -e 4 -fc -fn=$throws -ff=data/exercise4.txt -fj=$jobs -ft=4
+            "$executable-dbg" -e 4 -fb -fn=$throws -ff=data/exercise4.txt -fj=$jobs -ft=4
         done
     done
     ;&

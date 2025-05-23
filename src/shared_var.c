@@ -54,9 +54,9 @@ static const uint64_t nsec_to_msec_factor = 1000000;
 
 // --- GLOBALS --- //
 
-static uint64_t         incremented_g = 0;
-static _Atomic uint64_t incremented_atom_g = 0;
-static pthread_mutex_t  shared_var_mtx;
+static uint64_t             incremented_g = 0;
+static atomic_uint_fast64_t incremented_atom_g = 0;
+static pthread_mutex_t      shared_var_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
@@ -176,9 +176,18 @@ EXERCISE_IMPLM_DECL(shared_var_impl)
             threads[i] == NULL;
         }
 
-        assert(
-                incremented_g == options_p->loops*options_p->job_count
-                || incremented_atom_g == options_p->loops*options_p->job_count);
+        if (options_p->do_with_atomic)
+        {
+            printf("%lu ", incremented_atom_g);
+            assert(incremented_atom_g == options_p->loops*options_p->job_count);
+            incremented_atom_g = 0;
+        }
+        else
+        {
+            printf("%lu ", incremented_g);
+            assert(incremented_g == options_p->loops*options_p->job_count);
+            incremented_g = 0;
+        }
 
         RECORD(bench_h);
     }
@@ -210,12 +219,10 @@ CALLBACK_DECL(increment_atomic)
 {
     uint64_t loops = (uint64_t)args;
 
-    uint64_t intrm = atomic_load(&incremented_atom_g);
     for (uint64_t i = 0; i < loops; i++)
     {
-        intrm++;
+        incremented_atom_g++;
     }
-    atomic_store(&incremented_atom_g, intrm);
    
 
     return NULL;

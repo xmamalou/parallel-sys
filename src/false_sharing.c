@@ -61,9 +61,11 @@ static const uint64_t nsec_to_msec_factor = 1000000;
 
 // --- GLOBALS --- //
 
-static uint64_t*         incremented_gs = NULL;
-static _Atomic uint64_t* incremented_atom_gs = NULL;
-static pthread_mutex_t   shared_var_mtx;
+static uint64_t          increment_count_g = 0;
+
+static uint64_t*             incremented_gs = NULL;
+static atomic_uint_fast64_t* incremented_atom_gs = NULL;
+static pthread_mutex_t       shared_var_mtx;
 
 // --- FUNCTION DECLARATIONS --- //
 
@@ -110,6 +112,8 @@ void false_sharing(
                 options.tries);
     }
 
+    increment_count_g = options.incr_times;
+
     double time_of_execution = 0;
     false_sharing_impl(
             &options,
@@ -153,7 +157,7 @@ EXERCISE_IMPLM_DECL(false_sharing_impl)
         incremented_gs = calloc(options_p->job_count, sizeof(uint32_t)); 
         break;
     case ATOMIC:
-        incremented_atom_gs = calloc(options_p->job_count, sizeof(_Atomic uint32_t)); 
+        incremented_atom_gs = calloc(options_p->job_count, sizeof(atomic_uint_fast64_t)); 
         break;
     default:
         break;
@@ -178,6 +182,23 @@ EXERCISE_IMPLM_DECL(false_sharing_impl)
     // we avoid multithreading the loop in this scenario
     for (uint32_t j = 0; j < options_p->tries; j++) 
     {
+        switch (options_p->which_method)
+        {
+        case NO_SYNC:
+        case MUTEX:
+            for (uint32_t i = 0; i < options_p->job_count; i++)
+            {
+                incremented_gs[i] = 0;
+            }
+            break;
+        case ATOMIC:
+            for (uint32_t i = 0; i < options_p->job_count; i++)
+            {
+                incremented_atom_gs[i] = 0;
+            }
+            break;
+        }
+
         BENCHMARK_T bench_h = start_benchmark();
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
@@ -200,9 +221,20 @@ EXERCISE_IMPLM_DECL(false_sharing_impl)
 
         for (uint32_t i = 0; i < options_p->job_count; i++)
         {
-            assert(
-                    incremented_gs[i] == options_p->incr_times
-                ||  incremented_atom_gs[i] == options_p->incr_times);
+            switch (options_p->which_method)
+            {
+            case NO_SYNC:
+            case MUTEX:
+                printf("%d ", incremented_gs[i]);
+                assert(incremented_gs[i] == options_p->incr_times);
+                break;
+            case ATOMIC:
+                printf("%d ", incremented_atom_gs[i]);
+                assert(incremented_atom_gs[i] == options_p->incr_times);
+                break;
+            default:
+                break;
+            }
         }
     }
 
@@ -230,7 +262,11 @@ EXERCISE_IMPLM_DECL(false_sharing_impl)
 CALLBACK_DECL(increment_nosync)
 {
     uint32_t threadnum = (uint32_t)args;
-    incremented_gs[threadnum]++;
+
+    for (uint64_t i = 0; i < increment_count_g; i++)
+    {
+        incremented_gs[threadnum]++;
+    }
 }
 
 CALLBACK_DECL(increment_locks)
@@ -238,7 +274,10 @@ CALLBACK_DECL(increment_locks)
     uint32_t threadnum = (uint32_t)args;
 
     pthread_mutex_lock(&shared_var_mtx);
-    incremented_gs[threadnum]++;
+    for (uint64_t i = 0; i < increment_count_g; i++)
+    {   
+        incremented_gs[threadnum]++;
+    }
     pthread_mutex_unlock(&shared_var_mtx);
 
     return NULL;
@@ -248,9 +287,10 @@ CALLBACK_DECL(increment_atomic)
 {
     uint32_t threadnum = (uint32_t)args;
 
-    uint64_t intrm = atomic_load(&incremented_atom_gs[threadnum]);
-    intrm++;
-    atomic_store(&incremented_atom_gs[threadnum], intrm);
+    for (uint64_t i = 0; i < increment_count_g; i++)
+    {
+        incremented_atom_gs[threadnum]++;
+    }
 
     return NULL;
 }
