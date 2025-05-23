@@ -65,6 +65,11 @@ FLAG_READER_DECL();
 EXERCISE_IMPLM_DECL(merge_sort_serial);
 EXERCISE_IMPLM_DECL(merge_sort_parallel);
 
+void merge_sort_algo(
+    uint16_t* array, uint64_t left, uint64_t right);
+void merge(
+    uint16_t* array, uint64_t left, uint64_t middle, uint64_t right);
+
 // --- FUNCTION DEFINITIONS --- //
 
 void merge_sort(
@@ -156,51 +161,84 @@ FLAG_READER(options_p)
 
 EXERCISE_IMPLM_DECL(merge_sort_serial)
 {
-    uint32_t middle = options_p->element_count/2;
-    uint16_t* left = calloc(middle, sizeof(uint16_t));
-    uint16_t* right = calloc(middle, sizeof(uint16_t));
-
-    for (uint64_t k = 0; k < options_p->tries; k++)
+    for (uint32_t i = 0; i < options_p->tries; i++)
     {
         BENCHMARK_T benchmark = start_benchmark();
 
-        for (uint32_t i = 0; i < middle - 1; i++)
-        { 
-            left[i] = options_p->data[i];
-        }
-        for (uint32_t j = 0; j < middle - 1; j++)
-        {
-            right[j] = options_p->data[j + middle]; 
-        }
+        merge_sort_algo(
+                options_p->data,
+                0,
+                options_p->element_count - 1);
 
-        uint64_t i = 0, j = 0;
-        while (i < middle - 1 && j < middle - 1)
-        {
-            for (uint64_t k = 0; k < options_p->element_count; k++)
-            {
-                if (left[i] <= right[j])
-                {
-                    options_p->data[k] = left[i];
-                    i++;
-                } else {
-                    options_p->data[k] = right[j];
-                    j++;
-                }
-            }
-        }
         RECORD(benchmark);
 
-        for (uint64_t i = 0; i < options_p->element_count - 1; i++)
+        for (uint64_t j = 0; j < options_p->element_count - 1; j++)
         {
-            assert(options_p->data[i] <= options_p->data[i + 1]);
+            printf("%d ", options_p->data[j]);
+            assert(
+                    options_p->data[j] <= options_p->data[j + 1]);
         }
     }
-
-    free(left);
-    free(right);
 } 
 
 EXERCISE_IMPLM_DECL(merge_sort_parallel)
 {
+}
+
+void merge_sort_algo(
+    uint16_t* array, uint64_t left, uint64_t right)
+{
+    if (left < right)
+    {
+        uint64_t middle = left + (right - left) / 2;
+
+        merge_sort_algo(array, left, middle);
+        merge_sort_algo(array, middle + 1, right);
+
+        merge(array, left, middle, right);
+    }
+}
+
+void merge(
+    uint16_t* array, uint64_t left, uint64_t middle, uint64_t right)
+{
+    uint64_t i, j, k;
+    uint64_t n1 = middle - left + 1;
+    uint64_t n2 = right - middle;
+
+    uint16_t left_arr[n1], right_arr[n2];
+
+    for (i = 0; i < n1; i++)
+    {
+        left_arr[i] = array[left + i];
+    }
+    for (j = 0; j < n2; j++)
+    {
+        right_arr[j] = array[middle + 1 + j];
+    }
+
+    
+    i = 0;
+    j = 0;
+    k = left;
+    while (i < n1 && j < n2)
+    {
+        if (left_arr[i] <= right_arr[j])
+        {
+            array[k++] = left_arr[i++];
+        } else {
+            array[k++] = right_arr[j++];
+        }
+    }
+
+    while (i < n1)
+    {
+        array[k++] = left_arr[i++];
+    }
+
+    while (j < n2)
+    {
+        array[k++] = right_arr[j++];
+    }
 }
 
