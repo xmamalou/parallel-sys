@@ -210,12 +210,12 @@ CALLBACK_DECL(increment_atomic)
 {
     uint64_t loops = (uint64_t)args;
 
+    uint64_t intrm = atomic_load(&incremented_atom_g);
     for (uint64_t i = 0; i < loops; i++)
     {
-        uint64_t intrm = atomic_load(&incremented_atom_g);
         intrm++;
-        atomic_store(&incremented_atom_g, intrm);
     }
+    atomic_store(&incremented_atom_g, intrm);
    
 
     return NULL;
