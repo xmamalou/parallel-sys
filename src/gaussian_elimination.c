@@ -279,7 +279,7 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pc)
 
             double temp = options_p->x[i];
             #pragma omp parallel for num_threads(options_p->job_count) \
-                reduction(-:temp)
+                reduction(-:temp) schedule(static, 4)
             for (uint64_t j = 0; j < i; j++)
             {
                 temp -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[j];
@@ -300,7 +300,7 @@ EXERCISE_IMPLM_DECL(gaussian_parallel_pr)
             options_p->x[i] = options_p->b[i];
             double temp = options_p->x[i];
             #pragma omp parallel for num_threads(options_p->job_count) \
-                shared(i) reduction(-:temp)
+                shared(i) reduction(-:temp) schedule(static, 4)
             for (int32_t j = i+1; j < options_p->matrix_dims; j++)
             {
                 temp -= options_p->A[i + options_p->matrix_dims*j]*options_p->x[j];
