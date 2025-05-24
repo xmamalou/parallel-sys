@@ -185,6 +185,10 @@ EXERCISE_IMPLM_DECL(merge_sort_serial)
 
 EXERCISE_IMPLM_DECL(merge_sort_parallel)
 {
+    omp_set_dynamic(0);
+    omp_set_nested(1);
+    omp_set_num_threads(options_p->job_count);
+
     for (uint32_t i = 0; i < options_p->tries; i++)
     {
         BENCHMARK_T benchmark = start_benchmark();
@@ -272,17 +276,11 @@ void merge_sort_algo_parallel(
     {
         uint64_t middle = left + (right - left) / 2;
 
-        #pragma omp task shared(array) 
-        if(right - left > 1000)
-        {
-            merge_sort_algo_parallel(array, left, middle);
-        }
+        #pragma omp task shared(array) if(right - left > 1000)
+        merge_sort_algo_parallel(array, left, middle);
         
-        #pragma omp task shared(array) 
-        if(right - left > 1000)
-        {
-            merge_sort_algo_parallel(array, middle + 1, right);
-        }
+        #pragma omp task shared(array) if(right - left > 1000)
+        merge_sort_algo_parallel(array, middle + 1, right);
 
         #pragma omp taskwait
         merge(array, left, middle, right);
