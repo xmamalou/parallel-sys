@@ -154,47 +154,17 @@ case $jmp_to in
     done
     ;&
 8) 
-    echo -e "\e[33mExecuting Exercise 8 on $job_num threads...\e[0m"
+    echo -e "\e[33mExecuting Exercise 8...\e[0m"
     # 10000 array
-    if [ "$mute" = false ]; then
-        $executable -e 8 -fs -fn=10000 -ff=data/exercise8.txt $options
-        $executable -e 8 -fp -fn=10000 -ff=data/exercise8.txt $options
-    else 
-        $executable -e 8 -fs -fn=10000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-        $executable -e 8 -fp -fn=10000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-    fi
-    # 100000 array
-    if [ "$mute" = false ]; then
-        $executable -e 8 -fs -fn=100000 -ff=data/exercise8.txt $options
-        $executable -e 8 -fp -fn=100000 -ff=data/exercise8.txt $options
-    else 
-        $executable -e 8 -fs -fn=100000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-        $executable -e 8 -fp -fn=100000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-    fi
-    # 1000000 array
-    if [ "$mute" = false ]; then
-        $executable -e 8 -fs -fn=1000000 -ff=data/exercise8.txt $options
-        $executable -e 8 -fp -fn=1000000 -ff=data/exercise8.txt $options
-    else 
-        $executable -e 8 -fs -fn=1000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-        $executable -e 8 -fp -fn=1000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-    fi
-    # 10000000 array
-    if [ "$mute" = false ]; then
-        $executable -e 8 -fs -fn=10000000 -ff=data/exercise8.txt $options
-        $executable -e 8 -fp -fn=10000000 -ff=data/exercise8.txt $options
-    else 
-        $executable -e 8 -fs -fn=10000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-        $executable -e 8 -fp -fn=10000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-    fi
-    # 100000000 array
-    if [ "$mute" = false ]; then
-        $executable -e 8 -fs -fn=100000000 -ff=data/exercise8.txt $options
-        $executable -e 8 -fp -fn=100000000 -ff=data/exercise8.txt $options
-    else 
-        $executable -e 8 -fs -fn=100000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-        $executable -e 8 -fp -fn=100000000 -ff=data/exercise8.txt $options > /dev/null 2>&1
-    fi
+    for size in 10000 100000 1000000 10000000 100000000; do
+        $executable -e 8 -fs -fn=$size -ff=data/exercise8.txt -fj=$jobs -ft=4
+    done
+
+    for jobs in {1..8}; do
+        for size in 10000 100000 1000000 10000000 100000000; do
+            $executable -e 8 -fp -fn=$size -ff=data/exercise8.txt -fj=$jobs -ft=4
+        done
+    done
     ;;
 *)
     echo -e "\e[31mERROR! Invalid exercise number!\e[0m"
