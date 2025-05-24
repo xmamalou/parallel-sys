@@ -70,6 +70,9 @@ void merge_sort_algo(
 void merge(
     uint16_t* array, uint64_t left, uint64_t middle, uint64_t right);
 
+void merge_sort_algo_parallel(
+    uint16_t* array, uint64_t left, uint64_t right);
+
 // --- FUNCTION DEFINITIONS --- //
 
 void merge_sort(
@@ -174,7 +177,6 @@ EXERCISE_IMPLM_DECL(merge_sort_serial)
 
         for (uint64_t j = 0; j < options_p->element_count - 1; j++)
         {
-            printf("%d ", options_p->data[j]);
             assert(
                     options_p->data[j] <= options_p->data[j + 1]);
         }
@@ -183,6 +185,27 @@ EXERCISE_IMPLM_DECL(merge_sort_serial)
 
 EXERCISE_IMPLM_DECL(merge_sort_parallel)
 {
+    for (uint32_t i = 0; i < options_p->tries; i++)
+    {
+        BENCHMARK_T benchmark = start_benchmark();
+
+        #pragma omp parallel
+        {
+            #pragma omp single
+            merge_sort_algo_parallel(
+                options_p->data,
+                0,
+                options_p->element_count - 1);
+        }
+
+        RECORD(benchmark);
+
+        for (uint64_t j = 0; j < options_p->element_count - 1; j++)
+        {
+            assert(
+                    options_p->data[j] <= options_p->data[j + 1]);
+        }
+    }
 }
 
 void merge_sort_algo(
@@ -242,3 +265,26 @@ void merge(
     }
 }
 
+void merge_sort_algo_parallel(
+    uint16_t* array, uint64_t left, uint64_t right)
+{
+    if (left < right)
+    {
+        uint64_t middle = left + (right - left) / 2;
+
+        #pragma omp task shared(array) 
+        if(right - left > 1000)
+        {
+            merge_sort_algo_parallel(array, left, middle);
+        }
+        
+        #pragma omp task shared(array) 
+        if(right - left > 1000)
+        {
+            merge_sort_algo_parallel(array, middle + 1, right);
+        }
+
+        #pragma omp taskwait
+        merge(array, left, middle, right);
+    }
+}
